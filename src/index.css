@@ -1,0 +1,194 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* adding custom font to the body */
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: #f7f7f7;
+}
+
+*::-webkit-scrollbar{
+  width: 2px;
+  background: #f7f7f7;
+  border-radius: 12px;
+}
+
+.tableContainer::-webkit-scrollbar{
+ width: 5px;
+ height: 4px;
+ background: #f7f7f7;
+ border-radius: 12px;
+}
+
+.ladderFilter::-webkit-scrollbar{
+  width: 2px;
+  background: #f7f7f7;
+  border-radius: 12px;
+}
+
+.customMultiSelect::-webkit-scrollbar{
+  width: 4px;
+  background: #f7f7f7;
+}
+
+.tableContainer::-webkit-scrollbar-thumb{
+  width: 5px;
+  background: #a5a4a4;
+  border-radius: 12px;
+ }
+
+.customMultiSelect::-webkit-scrollbar-thumb{
+  width: 4px;
+  height: 4px;
+  background: #504e4e;
+  border-radius: 12px;
+
+}
+
+.filterContainer::-webkit-scrollbar{
+  width: 2px;
+  background: #f7f7f7;
+  border-radius: 12px;
+}
+
+.invoiceContainer::-webkit-scrollbar{
+  width: 2px;
+  background: #f7f7f7;
+  border-radius: 12px;
+
+}
+
+.followupContainer::-webkit-scrollbar{
+  width: 2px;
+  background: #f7f7f7;
+  border-radius: 12px;
+}
+
+.highlighted-row {
+  background-color: #dde9f3; /* Light blue background color */
+  transition: background-color 1s ease;
+  overflow-y: scroll; 
+}
+
+
+/* changing the accent color of checbox & radio */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #9a55ff;
+}
+
+/* removing the spin buttons from input type number */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"] {
+  -webkit-appearance: none;
+  margin: 0;
+  -moz-appearance: textfield !important;
+}
+
+
+
+/* tootliptext styling */
+.tooltiptext::after {
+  content: "";
+  position: absolute;
+  bottom: 90%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent black transparent;
+}
+
+.square-box {
+  border-radius: 10px; /* Adjust the border-radius as needed */
+  transition: border-radius 0.3s ease; /* Add transition effect */
+  margin-left: 5px;
+  margin-right: 10px;
+}
+
+.square-box:hover {
+  border-radius: 20px; /* Adjust the border-radius for the hover effect */
+}
+
+
+/* Custom Calender Styling */
+.custom-daterange > div > div {
+  position: fixed;
+  bottom: 0;
+}
+.custom-daterange > div > div > div.absolute.z-20.h-4.w-4.rotate-45 {
+  display: none;
+}
+
+.bg-blue-100 {
+  background-color: #eadcff;
+}
+.bg-blue-500 {
+  background-color: #9a55ff;
+}
+.text-blue-600,
+.text-blue-500 {
+  color: #9a55ff;
+}
+
+/* ---------- Budget (Price Range Styling) Starts ---------- */
+.thumb {
+  top: -6px;
+  border-radius: 50%;
+  background: #9a55ff;
+  width: 15px;
+  cursor: pointer;
+  height: 15px;
+
+  font-size: 0;
+  outline: none;
+}
+.track-0 {
+  background-color: #e0e0e0;
+  height: 2px;
+}
+.track-2 {
+  height: 2px;
+  background-color: #e0e0e0;
+}
+
+.track-1 {
+  height: 2px;
+  background: #d2b2ff;
+}
+
+/* ---------- Budget (Price Range Styling) Ends ---------- */
+
+/* Styling for custom datetime */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  /* opacity: 0; */
+  background: transparent;
+  bottom: 0;
+  color: transparent;
+  cursor: pointer;
+  height: auto;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+}
+
+/* input[type="date"]::-webkit-calendar-picker-indicator {
+  background: transparent;
+  bottom: 0;
+  color: transparent;
+  cursor: pointer;
+  height: auto;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+} */
+
+
+  

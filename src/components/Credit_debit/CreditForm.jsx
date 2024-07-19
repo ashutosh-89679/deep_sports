@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from "../common/Sidebar";
-import { AppContext } from ".././../context/AppContext";
+import { AppContext } from "../../context/AppContext";
 import apiInstance from "../../api/apiInstance";
 import { toast } from "react-toastify";
 
@@ -10,6 +10,20 @@ const CreditForm = () => {
     const { activeUserData } = useContext(AppContext);
     const [activeTab, setActiveTab] = useState('allCredits');
     const [credits, setCredits] = useState([]);
+    const [totalCredits, setTotalCredits] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const creditsPerPage = 10;
+
+    const [data, setData] = useState({
+        id: '',
+        credit_date: '',
+        credit_title: '',
+        credit_desc: '',
+        credit_amount: '',
+        added_by: '',
+    });
+
+    const [errors, setErrors] = useState({});
 
     const getTrimmedUserId = (userId) => {
         return userId.replace(/^LNUSR/, '');
@@ -22,39 +36,21 @@ const CreditForm = () => {
     }, [activeUserData]);
 
     useEffect(() => {
-        fetchCredits();
-    }, []);
+        fetchCredits(currentPage);
+    }, [currentPage]);
 
-    const fetchCredits = async () => {
+    const fetchCredits = async (page) => {
         try {
-            const response = await apiInstance("/Credit.php", "POST");
+            const response = await apiInstance(`/getCredits.php?page=${page}`, "POST");
             if (response.status === 200) {
-                setCredits(response.data);
+                setCredits(response.data.data);
+                setTotalCredits(response.data.total_count);
             } else {
                 toast.error("Failed to fetch credits");
             }
         } catch (error) {
             toast.error("An error occurred while fetching credits");
         }
-    };
-
-    const initialFormData = {
-        credit_date: '',
-        credit_title: '',
-        credit_desc: '',
-        credit_amount: '',
-        added_by: userID,
-    };
-
-    const [data, setData] = useState(initialFormData);
-    const [errors, setErrors] = useState({});
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setData({
-            ...data,
-            [name]: value
-        });
     };
 
     const validate = () => {
@@ -67,27 +63,67 @@ const CreditForm = () => {
         return Object.keys(tempErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setData({
+            ...data,
+            [name]: value
+        });
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (validate()) {
-            console.log(JSON.stringify(data));
-            apiInstance("/Credit.php", "PUT", data)
-                .then((responseData) => {
-                    console.log(responseData)
-                    if (responseData.status === 200) {
-                        toast.success("Credit Added");
-                        setData(initialFormData);
-                        fetchCredits(); // Refresh the credits list
-                    } else {
-                        toast.error("Error Occurred");
-                    }
-                })
+            try {
+                const response = await apiInstance("/Credit.php", "PATCH", {
+                    id: data.id,
+                    credit_date: data.credit_date,
+                    credit_title: data.credit_title,
+                    credit_desc: data.credit_desc,
+                    credit_amount: data.credit_amount,
+                    added_by: userID,
+                });
+                if (response.status === 200) {
+                    toast.success("Credit Updated");
+                    setData({
+                        id: '',
+                        credit_date: '',
+                        credit_title: '',
+                        credit_desc: '',
+                        credit_amount: '',
+                        added_by: '',
+                    });
+                    fetchCredits(currentPage); // Refresh the credits list
+                } else {
+                    toast.error("Error Occurred");
+                }
+            } catch (error) {
+                toast.error("An error occurred while updating credit");
+            }
         }
+    };
+
+    const handleEditClick = (credit) => {
+        setData({
+            id: credit.id,
+            credit_date: credit.credit_date,
+            credit_title: credit.credit_title,
+            credit_desc: credit.credit_desc,
+            credit_amount: credit.credit_amount,
+            added_by: credit.added_by,
+        });
+        setActiveTab('addCredit');
     };
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);
     };
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    const totalPages = Math.ceil(totalCredits / creditsPerPage);
 
     return (
         <>
@@ -103,7 +139,7 @@ const CreditForm = () => {
                                 onClick={() => handleTabClick('allCredits')}
                                 className={`w-1/2 py-3 ${activeTab === 'allCredits' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-tl-md focus:outline-none`}
                             >
-                                All Credits
+                                All Credits 
                             </button>
                             <button
                                 onClick={() => handleTabClick('addCredit')}
@@ -115,7 +151,7 @@ const CreditForm = () => {
 
                         {activeTab === 'allCredits' ? (
                             <div>
-                                <h2 className="text-2xl font-semibold mb-4">All Credits</h2>
+                                <h2 className="text-2xl font-semibold mb-4">All Credits <i class="fa-solid fa-filter cursor-pointer"></i></h2>
                                 <table className="min-w-full bg-white border">
                                     <thead className='bg-gray-100 text-sm'>
                                         <tr>
@@ -128,18 +164,35 @@ const CreditForm = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {credits.map((credit, index) => (
-                                            <tr key={index}>
+                                        {credits.length > 0 ? credits.map((credit, index) => (
+                                            <tr key={index} onClick={() => handleEditClick(credit)}>
                                                 <td className="py-2 px-4 justify-start border-b">{credit.credit_date}</td>
-                                                <td className="py-2 px-4 text-center  border-b">{credit.credit_title}</td>
-                                                <td className="py-2 px-4 text-center  border-b">{credit.credit_desc}</td>
-                                                <td className="py-2 px-4 text-center  border-b">₹ {credit.credit_amount}</td>
-                                                <td className="py-2 px-4 text-center  border-b">{credit.added_by}</td>
-                                                <td className="py-2 px-4 text-center  border-b"> <i class="fa-solid fa-pen"></i> </td>
+                                                <td className="py-2 px-4 text-center border-b">{credit.credit_title}</td>
+                                                <td className="py-2 px-4 text-center border-b">{credit.credit_desc}</td>
+                                                <td className="py-2 px-4 text-center border-b">₹ {credit.credit_amount}</td>
+                                                <td className="py-2 px-4 text-center border-b">{credit.added_by}</td>
+                                                <td className="py-2 px-4 text-center cursor-pointer border-b">
+                                                    <i className="fa-solid fa-pen"></i>
+                                                </td>
                                             </tr>
-                                        ))}
+                                        )) : (
+                                            <tr>
+                                                <td className="py-2 px-4 text-center border-b" colSpan="6">No credits found</td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </table>
+                                <div className="flex justify-center mt-4">
+                                    {Array.from({ length: totalPages }, (_, i) => (
+                                        <button
+                                            key={i}
+                                            className={`px-4 py-2 mx-1 ${currentPage === i + 1 ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-md`}
+                                            onClick={() => handlePageChange(i + 1)}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit}>
@@ -166,33 +219,33 @@ const CreditForm = () => {
                                         />
                                         {errors.credit_title && <p className="text-red-500 text-sm mt-1">{errors.credit_title}</p>}
                                     </div>
-                                </div>
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 text-lg font-medium">Credit Description:</label>
-                                    <textarea
-                                        name="credit_desc"
-                                        value={data.credit_desc}
-                                        onChange={handleChange}
-                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    {errors.credit_desc && <p className="text-red-500 text-sm mt-1">{errors.credit_desc}</p>}
-                                </div>
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 text-lg font-medium">Credit Amount:</label>
-                                    <input
-                                        type="number"
-                                        name="credit_amount"
-                                        value={data.credit_amount}
-                                        onChange={handleChange}
-                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    {errors.credit_amount && <p className="text-red-500 text-sm mt-1">{errors.credit_amount}</p>}
+                                    <div>
+                                        <label className="block text-gray-700 text-lg font-medium">Credit Description:</label>
+                                        <textarea
+                                            name="credit_desc"
+                                            value={data.credit_desc}
+                                            onChange={handleChange}
+                                            className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        {errors.credit_desc && <p className="text-red-500 text-sm mt-1">{errors.credit_desc}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 text-lg font-medium">Credit Amount:</label>
+                                        <input
+                                            type="number"
+                                            name="credit_amount"
+                                            value={data.credit_amount}
+                                            onChange={handleChange}
+                                            className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        {errors.credit_amount && <p className="text-red-500 text-sm mt-1">{errors.credit_amount}</p>}
+                                    </div>
                                 </div>
                                 <button
                                     type="submit"
-                                    className="bg-black w-[200px] text-white py-3 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                                 >
-                                    Add Credit
+                                    Submit
                                 </button>
                             </form>
                         )}

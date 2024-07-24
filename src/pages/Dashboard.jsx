@@ -256,11 +256,11 @@ const Dashboard = () => {
       </div>
     </div>
     
-    {/* Sales Statistics Card with Line Chart */}
+    {/* Accont balance */}
     <div className="bg-white p-4 rounded-2xl shadow-lg">
-      <h2 className="text-lg font-medium">Sales Statistics</h2>
+      <h2 className="text-lg font-medium">Account balance</h2>
       <div id="line-chart" className="mt-2">
-      <CommonChart2  Name="Company" />
+
       
       </div>
 

@@ -12,18 +12,9 @@ const CreditForm = () => {
     const [credits, setCredits] = useState([]);
     const [totalCredits, setTotalCredits] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editId, setEditId] = useState(null);
     const creditsPerPage = 10;
-
-    const [data, setData] = useState({
-        id: '',
-        credit_date: '',
-        credit_title: '',
-        credit_desc: '',
-        credit_amount: '',
-        added_by: '',
-    });
-
-    const [errors, setErrors] = useState({});
 
     const getTrimmedUserId = (userId) => {
         return userId.replace(/^LNUSR/, '');
@@ -53,6 +44,25 @@ const CreditForm = () => {
         }
     };
 
+    const initialFormData = {
+        credit_date: '',
+        credit_title: '',
+        credit_desc: '',
+        credit_amount: '',
+        added_by: userID,
+    };
+
+    const [data, setData] = useState(initialFormData);
+    const [errors, setErrors] = useState({});
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setData({
+            ...data,
+            [name]: value
+        });
+    };
+
     const validate = () => {
         let tempErrors = {};
         if (!data.credit_date) tempErrors.credit_date = 'This field is required.';
@@ -63,67 +73,66 @@ const CreditForm = () => {
         return Object.keys(tempErrors).length === 0;
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setData({
-            ...data,
-            [name]: value
-        });
-    };
-
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         if (validate()) {
-            try {
-                const response = await apiInstance("/Credit.php", "PATCH", {
-                    id: data.id,
-                    credit_date: data.credit_date,
-                    credit_title: data.credit_title,
-                    credit_desc: data.credit_desc,
-                    credit_amount: data.credit_amount,
-                    added_by: userID,
-                });
-                if (response.status === 200) {
-                    toast.success("Credit Updated");
-                    setData({
-                        id: '',
-                        credit_date: '',
-                        credit_title: '',
-                        credit_desc: '',
-                        credit_amount: '',
-                        added_by: '',
-                    });
-                    fetchCredits(currentPage); // Refresh the credits list
-                } else {
-                    toast.error("Error Occurred");
-                }
-            } catch (error) {
-                toast.error("An error occurred while updating credit");
+            if (isEditing) {
+                apiInstance("/Credit.php", "PATCH", { ...data, id: editId })
+                    .then((responseData) => {
+                        if (responseData.status === 200) {
+                            toast.success("Credit Updated");
+                            setData(initialFormData);
+                            setIsEditing(false);
+                            setEditId(null);
+                            fetchCredits(currentPage); // Refresh the credits list
+                            setActiveTab('allCredits');
+                        } else {
+                            toast.error("Error Occurred");
+                        }
+                    })
+            } else {
+                apiInstance("/Credit.php", "PUT", data)
+                    .then((responseData) => {
+                        if (responseData.status === 200) {
+                            toast.success("Credit Added");
+                            setData(initialFormData);
+                            fetchCredits(currentPage); // Refresh the credits list
+                        } else {
+                            toast.error("Error Occurred");
+                        }
+                    })
             }
         }
     };
 
-    const handleEditClick = (credit) => {
-        setData({
-            id: credit.id,
-            credit_date: credit.credit_date,
-            credit_title: credit.credit_title,
-            credit_desc: credit.credit_desc,
-            credit_amount: credit.credit_amount,
-            added_by: credit.added_by,
-        });
-        setActiveTab('addCredit');
-    };
-
     const handleTabClick = (tab) => {
         setActiveTab(tab);
+        if (tab === 'addCredit') {
+            setIsEditing(false);
+            setEditId(null);
+            setData(initialFormData);
+        }
     };
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
 
+    const handleEdit = (credit) => {
+        setData({
+            credit_date: credit.credit_date,
+            credit_title: credit.credit_title,
+            credit_desc: credit.credit_desc,
+            credit_amount: credit.credit_amount,
+            added_by: credit.user_id,
+        });
+        setEditId(credit.id);
+        setIsEditing(true);
+        setActiveTab('addCredit');
+    };
+
     const totalPages = Math.ceil(totalCredits / creditsPerPage);
+
 
     return (
         <>
@@ -139,7 +148,7 @@ const CreditForm = () => {
                                 onClick={() => handleTabClick('allCredits')}
                                 className={`w-1/2 py-3 ${activeTab === 'allCredits' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-tl-md focus:outline-none`}
                             >
-                                All Credits 
+                                All Credits
                             </button>
                             <button
                                 onClick={() => handleTabClick('addCredit')}
@@ -151,7 +160,7 @@ const CreditForm = () => {
 
                         {activeTab === 'allCredits' ? (
                             <div>
-                                <h2 className="text-2xl font-semibold mb-4">All Credits <i class="fa-solid fa-filter cursor-pointer"></i></h2>
+                                <h2 className="text-2xl font-semibold mb-4 cursor-pointer">All Credits <i className="fa-solid fa-filter"></i></h2>
                                 <table className="min-w-full bg-white border">
                                     <thead className='bg-gray-100 text-sm'>
                                         <tr>
@@ -164,22 +173,25 @@ const CreditForm = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {credits.length > 0 ? credits.map((credit, index) => (
-                                            <tr key={index} onClick={() => handleEditClick(credit)}>
+                                        {credits.length > 0  && credits.map((credit, index) => (
+                                            <tr key={index}>
                                                 <td className="py-2 px-4 justify-start border-b">{credit.credit_date}</td>
                                                 <td className="py-2 px-4 text-center border-b">{credit.credit_title}</td>
                                                 <td className="py-2 px-4 text-center border-b">{credit.credit_desc}</td>
                                                 <td className="py-2 px-4 text-center border-b">₹ {credit.credit_amount}</td>
                                                 <td className="py-2 px-4 text-center border-b">{credit.added_by}</td>
                                                 <td className="py-2 px-4 text-center cursor-pointer border-b">
-                                                    <i className="fa-solid fa-pen"></i>
+                                                  {userID === credit.user_id ? (
+                                                    <i
+                                                      className="fa-solid fa-pen"
+                                                      onClick={() => handleEdit(credit)}
+                                                    ></i>
+                                                  ) : (
+                                                    <span>No Access</span> 
+                                                  )}
                                                 </td>
                                             </tr>
-                                        )) : (
-                                            <tr>
-                                                <td className="py-2 px-4 text-center border-b" colSpan="6">No credits found</td>
-                                            </tr>
-                                        )}
+                                        ))}
                                     </tbody>
                                 </table>
                                 <div className="flex justify-center mt-4">
@@ -219,33 +231,33 @@ const CreditForm = () => {
                                         />
                                         {errors.credit_title && <p className="text-red-500 text-sm mt-1">{errors.credit_title}</p>}
                                     </div>
-                                    <div>
-                                        <label className="block text-gray-700 text-lg font-medium">Credit Description:</label>
-                                        <textarea
-                                            name="credit_desc"
-                                            value={data.credit_desc}
-                                            onChange={handleChange}
-                                            className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        {errors.credit_desc && <p className="text-red-500 text-sm mt-1">{errors.credit_desc}</p>}
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 text-lg font-medium">Credit Amount:</label>
-                                        <input
-                                            type="number"
-                                            name="credit_amount"
-                                            value={data.credit_amount}
-                                            onChange={handleChange}
-                                            className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        {errors.credit_amount && <p className="text-red-500 text-sm mt-1">{errors.credit_amount}</p>}
-                                    </div>
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 text-lg font-medium">Credit Description:</label>
+                                    <textarea
+                                        name="credit_desc"
+                                        value={data.credit_desc}
+                                        onChange={handleChange}
+                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    {errors.credit_desc && <p className="text-red-500 text-sm mt-1">{errors.credit_desc}</p>}
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 text-lg font-medium">Credit Amount:</label>
+                                    <input
+                                        type="number"
+                                        name="credit_amount"
+                                        value={data.credit_amount}
+                                        onChange={handleChange}
+                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    {errors.credit_amount && <p className="text-red-500 text-sm mt-1">{errors.credit_amount}</p>}
                                 </div>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                    className="bg-black w-[200px] text-white py-3 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
                                 >
-                                    Submit
+                                    {isEditing ? 'Update Credit' : 'Add Credit'}
                                 </button>
                             </form>
                         )}

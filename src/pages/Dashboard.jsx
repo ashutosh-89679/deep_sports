@@ -139,6 +139,33 @@ export const CommonChart2 = React.memo(({  Name }) => {
 const Dashboard = () => {
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     const { activeUserData } = useContext(AppContext);
+    const [data, setData] = useState(null);
+
+
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const response = await axios.get('https://deepsparkle.net/api/dashboard.php');
+          setData(response.data.data[0]);
+        } catch (error) {
+          console.error('Error fetching data', error);
+        }
+      };
+  
+      fetchData();
+    }, []);
+
+    if (!data) {
+      return <div>Loading...</div>;
+    }
+
+    function getCurrentYearRange() {
+      const currentYear = new Date().getFullYear();
+      const nextYear = currentYear + 1;
+      return `${currentYear}-${nextYear}`;
+    }
+
+    const cy = getCurrentYearRange();
 
 
   return (
@@ -157,39 +184,46 @@ const Dashboard = () => {
   </div>
   
   <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-    {/* Card for Total Orders */}
-    <div className="bg-white p-4 rounded-2xl shadow-lg">
-      <h2 className="text-lg font-medium">Total Credits</h2>
-      <p className="text-2xl font-bold">39,572</p>
-      <div className="flex gap-2">
-      <p className="text-green-500">⬆ 17.4%</p>
-      <p className="font-semibold text-sm mt-1">2021-2022</p>
-
+      {/* Total Credits */}
+      <div className="bg-white p-4 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-medium">Total Credits</h2>
+        <p className="text-2xl font-bold">{data.total_credit}</p>
+        <div className="flex gap-2">
+          <p className="text-green-500">⬆ 17.4%</p>
+          <p className="font-semibold text-sm mt-1">{cy}</p>
+        </div>
       </div>
 
+      {/* Total Paid */}
+      <div className="bg-white p-4 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-medium">Total Paid</h2>
+        <p className="text-2xl font-bold">₹ {data.total_paid}</p>
+        <div className="flex gap-2">
+          <p className="text-green-500">⬆ 17.4%</p>
+          <p className="font-semibold text-sm mt-1">{cy}</p>
+        </div>
+      </div>
+
+      {/* Total Balance */}
+      <div className="bg-white p-4 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-medium">Total Balance</h2>
+        <p className="text-2xl font-bold">₹ {data.total_balance}</p>
+        <div className="flex gap-2">
+          <p className="text-green-500">⬆ 17.4%</p>
+          <p className="font-semibold text-sm mt-1">{cy}</p>
+        </div>
+      </div>
+
+      {/* Total Quantity */}
+      <div className="bg-white p-4 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-medium">Total Quantity</h2>
+        <p className="text-2xl font-bold">{data.total_qty}</p>
+        <div className="flex gap-2">
+          <p className="text-green-500">⬆ 17.4%</p>
+          <p className="font-semibold text-sm mt-1">{cy}</p>
+        </div>
+      </div>
     </div>
-    
-    {/* Card for Monthly Orders */}
-    <div className="bg-white p-4 rounded-2xl shadow-lg">
-      <h2 className="text-lg font-medium">Total Orders</h2>
-      <p className="text-2xl font-bold">2,294</p>
-      <p className="text-red-500">⬇ 3.9%</p>       
-    </div>
-    
-    {/* Card for Monthly Income */}
-    <div className="bg-white p-4 rounded-2xl shadow-lg">
-      <h2 className="text-lg font-medium">Account</h2>
-      <p className="text-2xl font-bold">$98,572</p>
-      <p className="text-green-500">⬆ 2.1%</p>
-    </div>
-    
-    {/* Card for Preparing to Ship */}
-    <div className="bg-white p-4 rounded-2xl shadow-lg">
-      <h2 className="text-lg font-medium">Preparing to Ship</h2>
-      <p className="text-2xl font-bold">361</p>
-      <p className="text-green-500">⬆ 5.2%</p>
-    </div>
-  </div>
   
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
     {/* Monthly Target Card */}

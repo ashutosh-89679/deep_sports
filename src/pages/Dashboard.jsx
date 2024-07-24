@@ -140,20 +140,24 @@ const Dashboard = () => {
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     const { activeUserData } = useContext(AppContext);
     const [data, setData] = useState(null);
+    const [transactions, setTransactions] = useState([]);
 
 
     useEffect(() => {
-      const fetchData = async () => {
+      // Fetch data from the API
+      const fetchTransactions = async () => {
         try {
-          const response = await axios.get('https://deepsparkle.net/api/dashboard.php');
-          setData(response.data.data[0]);
+          const response = await fetch('https://deepsparkle.net/api/transactions.php');
+          const data = await response.json();
+          setTransactions(data);
         } catch (error) {
-          console.error('Error fetching data', error);
+          console.error('Error fetching transactions:', error);
         }
       };
   
-      fetchData();
+      fetchTransactions();
     }, []);
+  
 
     if (!data) {
       return <div>Loading...</div>;
@@ -186,8 +190,8 @@ const Dashboard = () => {
   <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
       {/* Total Credits */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Credits</h2>
-        <p className="text-2xl font-bold">{data.total_credit}</p>
+        <h2 className="text-lg font-medium">Total Credit Amount</h2>
+        <p className="text-2xl font-bold">₹ {data.total_credit}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -237,21 +241,20 @@ const Dashboard = () => {
         <div className="bg-blue-600 h-2 rounded-lg" style={{ width: '69.32%' }}></div>
       </div>
       <div className="flex items-center justify-between mt-2">
-        <p className="text-gray-500">2,294</p>
-        <p className="text-gray-500">3,000</p>
+        <p className="text-gray-500">{data.total_paid}</p>
       </div>
       <div className="flex items-center justify-between mt-4">
         <div>
-          <p className="text-gray-500">Today</p>
-          <p className="text-lg font-bold">$6.8k</p>
+          <p className="text-gray-500">Total Balance</p>
+          <p className="text-lg font-bold">{data.total_balance}</p>
         </div>
         <div>
-          <p className="text-gray-500">Orders</p>
-          <p className="text-lg font-bold">164</p>
+          <p className="text-gray-500">Total Qty</p>
+          <p className="text-lg font-bold">{data.total_qty}</p>
         </div>
         <div>
-          <p className="text-gray-500">Delivered</p>
-          <p className="text-lg font-bold">104</p>
+          <p className="text-gray-500">Total Paid</p>
+          <p className="text-lg font-bold">{data.total_paid}</p>
         </div>
       </div>
     </div>
@@ -259,9 +262,18 @@ const Dashboard = () => {
     {/* Accont balance */}
     <div className="bg-white p-4 rounded-2xl shadow-lg">
       <h2 className="text-lg font-medium">Account balance</h2>
-      <div id="line-chart" className="mt-2">
-
-      
+      <div className="mt-2 border-b  h-10 text-lg font-semibold">
+      ₹ {data.current_bal}
+      </div>
+      <div className="p-6 flex gap-2 justify-center w-[100% ]">
+          <div className=" h-[100%] justify-center w-[50%] border-r border-black">
+            <p className="font-semibold">Total Credit</p>
+            <p>₹ {data.total_credit_amount}</p>
+          </div>
+          <div className=" h-[100%] justify-center w-[50%] ">
+          <p className="font-semibold">Total Credit</p>
+          <p>₹ {data.total_debit_amount}</p>
+          </div>
       </div>
 
     </div>
@@ -272,54 +284,46 @@ const Dashboard = () => {
     <div className="bg-white p-4 rounded-2xl shadow-lg">
       <h2 className="text-lg font-medium">Location</h2>
       <div id="map" className="mt-2">
-
-      <CommonChart  Name="Company" />
+  <iframe 
+    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3766.767181677502!2d73.01384387518075!3d19.248975846519542!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7bde5e82895ff%3A0x963d6375dc7f901c!2sDEEP%20SPORTS!5e0!3m2!1sen!2sin!4v1721840516974!5m2!1sen!2sin" 
+    width="600" 
+    height="150" 
+    style={{ border: '0' }} 
+    allowFullScreen 
+    loading="lazy" 
+    referrerPolicy="no-referrer-when-downgrade">
+  </iframe>
       </div>
 
 
 
     </div>
     
-    {/* Most Popular Products Card */}
+    {/* Most recent transactions */}
     <div className="bg-white p-4 rounded-2xl shadow-lg">
-  <h2 className="text-lg font-medium">The most popular products</h2>
-  <table className="mt-2 w-full">
-    <thead>
-      <tr className="border-b">
-        <th className="py-2">Product Name</th>
-        <th className="py-2">Price</th>
-        <th className="py-2">Units Sold</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr className="text-center py-2 border-b">
-        <td>Apple iPhone 13 Pro Max</td>
-        <td>$1,600</td>
-        <td>99</td>
-      </tr>
-      <tr className="text-center py-2 border-b">
-        <td>Apple MacBook Pro M2</td>
-        <td>$1,200</td>
-        <td>112</td>
-      </tr>
-      <tr className="text-center py-2 border-b">
-        <td>Apple iPad Pro 12.9</td>
-        <td>$899</td>
-        <td>84</td>
-      </tr>
-      <tr className="text-center py-2 border-b">
-        <td>Apple Watch Ultra 2</td>
-        <td>$799</td>
-        <td>72</td>
-      </tr>
-      <tr className="text-center py-2 border-b">
-        <td>Apple AirPods Pro 2</td>
-        <td>$249</td>
-        <td>95</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+      <h2 className="text-lg font-medium">Recent Transactions</h2>
+      <table className="mt-2 w-full">
+        <thead>
+          <tr className="border-b">
+            <th className="py-2">Transaction ID</th>
+            <th className="py-2">Date</th>
+            <th className="py-2">Type</th>
+            <th className="py-2">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map(transaction => (
+            <tr key={transaction.id} className="text-center py-2 border-b">
+              <td>{transaction.transid}</td>
+              <td>{transaction.date}</td>
+              <td>{transaction.trans_type}</td>
+              <td>₹ {transaction.amount}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
 
   </div>
 </div>

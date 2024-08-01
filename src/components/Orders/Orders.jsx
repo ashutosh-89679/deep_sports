@@ -3,6 +3,8 @@ import Sidebar from "../common/Sidebar";
 import { AppContext } from "../../context/AppContext";
 import apiInstance from "../../api/apiInstance";
 import { toast } from "react-toastify";
+import Select from 'react-select';
+
 
 const OrderForm = () => {
     const [userID, setUserID] = useState('');
@@ -15,6 +17,16 @@ const OrderForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false); 
     const [editId, setEditId] = useState(null); 
+    const [partyNames, setPartyNames] = useState([]);
+    const [selectedParty, setSelectedParty] = useState(null);
+    const [showAddParty, setShowAddParty] = useState(false);
+    const [newPartyName, setNewPartyName] = useState('');
+    const [fabricNames, setFabricNames] = useState([]);
+    const [selectedFabric, setSelectedFabric] = useState(null);
+    const [showAddFabric, setShowAddFabric] = useState(false);
+    const [newFabricName, setNewFabricName] = useState('');
+
+
 
     const getTrimmedUserId = (userId) => {
         return userId.replace(/^LNUSR/, '');
@@ -26,7 +38,7 @@ const OrderForm = () => {
         }
     }, [activeUserData]);
 
-    console.log(userID)
+   // console.log(userID)
 
     const fetchOrders = (page) => {
         setIsLoading(true);
@@ -49,6 +61,120 @@ const OrderForm = () => {
     useEffect(() => {
         fetchOrders(currentPage);
     }, [currentPage]);
+    
+
+    const fetchPartyNames = () => {
+        apiInstance("https://deepsparkle.net/api/getParticulars.php", "GET")
+            .then(response => {
+                const formattedParties = response.data.map(party => ({
+                    value: party.id,
+                    label: party.name
+                }));
+                setPartyNames(formattedParties);
+            })
+            .catch(error => {
+              
+                console.error(error);
+            });
+    };
+
+    const addPartyName = (e) => {
+        if(newPartyName !== ''){
+            apiInstance("https://deepsparkle.net/api/getParticulars.php", "PUT", { name: newPartyName })
+            .then(response => {
+                fetchPartyNames(); // Refetch party names to update the dropdown
+                setShowAddParty(false); // Hide the add input
+                setNewPartyName(''); // Reset the input field
+                toast.success("Party name added successfully");
+            })
+            .catch(error => {
+                toast.error("Failed to add party name");
+                console.error(error);
+            });
+        } else {
+            toast.error("Please enter a party name");
+        }
+        
+    };
+
+    useEffect(() => {
+        fetchPartyNames();
+    }, []);
+
+    const handleNewPartyChange = (e) => {
+        setNewPartyName(e.target.value);
+        setData({
+            PartyName: selectedParty?.value,
+        });
+    };
+
+    const handleAddPartyClick = () => {
+        setShowAddParty(true);
+    };
+
+    const handleSelectChange = selectedOption => {
+        setSelectedParty(selectedOption);
+        setData(prevData => ({
+            ...prevData,
+            PartyName: selectedOption.value 
+        }));
+    };
+
+    const fetchFabricNames = () => {
+        apiInstance("/getFabric.php", "GET")
+            .then(response => {
+                const formattedFabrics = response.data.map(fabric => ({
+                    value: fabric.id,
+                    label: fabric.name
+                }));
+                setFabricNames(formattedFabrics);
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    };
+
+    useEffect(() => {
+        fetchPartyNames();
+        fetchFabricNames();
+    }, []);
+
+    const addFabricName = (e) => {
+        e.preventDefault();
+        if (newFabricName !== '') {
+            apiInstance("/getFabric.php", "PUT", { name: newFabricName })
+                .then(response => {
+                    fetchFabricNames(); // Refetch fabric names to update the dropdown
+                    setShowAddFabric(false); // Hide the add input
+                    setNewFabricName(''); // Reset the input field
+                    toast.success("Fabric name added successfully");
+                })
+                .catch(error => {
+                    toast.error("Failed to add fabric name");
+                    console.error(error);
+                });
+        } else {
+            toast.error("Please enter a fabric name");
+        }
+    };
+
+    const handleNewFabricChange = (e) => {
+        setNewFabricName(e.target.value);
+    };
+
+    const handleAddFabricClick = () => {
+        setShowAddFabric(true);
+    };
+
+    const handleFabricSelectChange = selectedOption => {
+        setSelectedFabric(selectedOption);
+        setData(prevData => ({
+            ...prevData,
+            Fabric: selectedOption.value
+        }));
+    };
+
+    
 
     const initialFormData = {
         FormNo: '',
@@ -71,10 +197,13 @@ const OrderForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setData({
-            ...data,
-            [name]: value
-        });
+        let updatedData = { ...data, [name]: value };
+    
+        if ( data.Rate !== '' && data.Quantity !== '') {
+            updatedData.Total = Number(updatedData.Rate) * Number(updatedData.Quantity);
+        }
+    
+        setData(updatedData);
     };
 
     const validate = () => {
@@ -127,21 +256,23 @@ const OrderForm = () => {
     };
 
     const handleEdit = (order) => {
+
         setData({
             ...order,
             added_by: userID,
         });
+        setSelectedFabric(fabricNames.find(option => option.value === order.Fabric));
+        setSelectedParty(partyNames.find(option => option.value === order.PartyName));
         setEditId(order.id); 
         setIsEditing(true);
         setActiveTab('addOrder'); 
     };
 
-    const handlePageChange = (newPage) => {z
+    const handlePageChange = (newPage) => {
         if (newPage > 0 && newPage <= totalPages) {
             setCurrentPage(newPage);
         }
     };
-
 
     return (
         <>
@@ -199,9 +330,9 @@ const OrderForm = () => {
                                                         <tr key={index} className='text-xs text-center h-8'>
                                                             <td className="py-2 px-4 border-b">{order.FormNo}</td>
                                                             <td className="py-2 px-4 border-b">{order.Date}</td>
-                                                            <td className="py-2 px-4 border-b">{order.PartyName}</td>
+                                                            <td className="py-2 px-4 border-b">{partyNames.find(option => option.value === order.PartyName)?.label}</td>
                                                             <td className="py-2 px-4 border-b">{order.Particulars}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Fabric}</td>
+                                                            <td className="py-2 px-4 border-b">{fabricNames.find(option => option.value === order.Fabric)?.label}</td>
                                                             <td className="py-2 px-4 border-b">{order.Quantity}</td>
                                                             <td className="py-2 px-4 border-b">{order.Rate}</td>
                                                             <td className="py-2 px-4 border-b">{order.Design}</td>
@@ -283,16 +414,31 @@ const OrderForm = () => {
                                             {errors.Date && <p className="text-red-500 text-xs mt-1">{errors.Date}</p>}
                                         </div>
                                         <div className="form-group">
-                                            <label htmlFor="PartyName" className="block text-sm font-medium text-gray-700">PARTY NAME</label>
-                                            <input
-                                                type="text"
+                                            <label htmlFor="PartyName" className="block text-sm font-medium text-gray-700">
+                                                PARTY NAME
+                                                <i className="fa fa-plus cursor-pointer ml-2 border p-1" onClick={handleAddPartyClick}></i>
+                                            </label>
+                                            {showAddParty && (
+                                                <div className='flex gap-3 mb-2'>
+                                                    <input
+                                                        type="text"
+                                                        value={newPartyName}
+                                                        onChange={handleNewPartyChange}
+                                                        className="mt-1 p-2 border rounded-lg w-full"
+                                                        placeholder='enter party name'
+                                                    />
+                                                    <button onClick={(e) => addPartyName(e)} className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-lg">Add</button>
+                                                </div>
+                                            )}
+                                            <Select
                                                 id="PartyName"
-                                                name="PartyName"
-                                                value={data.PartyName}
-                                                onChange={handleChange}
-                                                className="mt-1 p-2 border rounded-lg w-full"
+                                                value={selectedParty}
+                                                onChange={handleSelectChange}
+                                                options={partyNames}
+                                                className="mt-1"
                                             />
                                             {errors.PartyName && <p className="text-red-500 text-xs mt-1">{errors.PartyName}</p>}
+                                            
                                         </div>
                                         <div className="form-group">
                                             <label htmlFor="Particulars" className="block text-sm font-medium text-gray-700">PARTICULARS</label>
@@ -307,16 +453,31 @@ const OrderForm = () => {
                                             {errors.Particulars && <p className="text-red-500 text-xs mt-1">{errors.Particulars}</p>}
                                         </div>
                                         <div className="form-group">
-                                            <label htmlFor="Fabric" className="block text-sm font-medium text-gray-700">FABRIC</label>
-                                            <input
-                                                type="text"
-                                                id="Fabric"
-                                                name="Fabric"
-                                                value={data.Fabric}
-                                                onChange={handleChange}
-                                                className="mt-1 p-2 border rounded-lg w-full"
+                                            <label htmlFor="PartyName" className="block text-sm font-medium text-gray-700">
+                                                FABRIC NAME 
+                                                <i className="fa fa-plus cursor-pointer ml-2 border p-1" onClick={handleAddFabricClick}></i>
+                                            </label>
+                                            {showAddFabric && (
+                                                <div className='flex gap-3 mb-2'>
+                                                    <input
+                                                        type="text"
+                                                        value={newFabricName}
+                                                        onChange={handleNewFabricChange}
+                                                        className="mt-1 p-2 border rounded-lg w-full"
+                                                        placeholder='enter Fabric name'
+                                                    />
+                                                    <button onClick={(e) => addFabricName(e)} className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-lg">Add</button>
+                                                </div>
+                                            )}
+                                            <Select
+                                                id="FabricName"
+                                                value={selectedFabric}
+                                                onChange={handleFabricSelectChange}
+                                                options={fabricNames}
+                                                className="mt-1"
                                             />
                                             {errors.Fabric && <p className="text-red-500 text-xs mt-1">{errors.Fabric}</p>}
+                                            
                                         </div>
                                         <div className="form-group">
                                             <label htmlFor="Quantity" className="block text-sm font-medium text-gray-700">QUANTITY</label>
@@ -357,13 +518,13 @@ const OrderForm = () => {
                                         <div className="form-group">
                                             <label htmlFor="Total" className="block text-sm font-medium text-gray-700">TOTAL</label>
                                             <input
-                                                type="number"
-                                                id="Total"
-                                                name="Total"
-                                                value={data.Total}
-                                                onChange={handleChange}
-                                                className="mt-1 p-2 border rounded-lg w-full"
-                                            />
+                                                  type="number"
+                                                  id="Total"
+                                                  name="Total"
+                                                  value={data.Total}
+                                                  onChange={handleChange}
+                                                  className="mt-1 p-2 border rounded-lg w-full"
+                                                />
                                             {errors.Total && <p className="text-red-500 text-xs mt-1">{errors.Total}</p>}
                                         </div>
                                         <div className="form-group">

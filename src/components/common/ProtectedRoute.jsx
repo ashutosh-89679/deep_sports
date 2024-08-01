@@ -19,7 +19,7 @@ const ProtectedRoute = ({ element }) => {
 
   // verifying the user
   const verifyUser = async () => {
-    setLoading(true);
+   // setLoading(true);
 
     // checking if the data is available in the local storage
     try {

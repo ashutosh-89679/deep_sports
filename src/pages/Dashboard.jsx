@@ -3,138 +3,9 @@ import Sidebar from "../components/common/Sidebar";
 import axios from "axios";
 import IMAGES from "../images";
 import { AppContext } from "../../src/context/AppContext";
-import { Chart } from "react-google-charts";
 
 
-export const CommonChart = React.memo(({ Name }) => {
-  // Example data for demonstration
-  const exampleData = [
-    { name: 'Product A', net_revenue: 1200 },
-    { name: 'Product B', net_revenue: 800 },
-    { name: 'Product C', net_revenue: 1500 },
-    { name: 'Product D', net_revenue: 700 },
-  ];
 
-  let data = [
-    [Name, 'Net Revenue'],
-    ...exampleData.map(item => [item.name, Number(item.net_revenue)])
-  ];
-
-  data = data.sort((a, b) => b[1] - a[1]);
-
-  const options = {
-    legend: {
-      position: 'right',
-      alignment: 'center',
-      textStyle: {
-        fontSize: 13,
-      },
-    },
-    chartArea: {
-      left: 0,
-      top: 0,
-      width: '100%',
-      height: '90%',
-    },
-    hAxis: {
-      textStyle: {
-        fontSize: 13,
-      },
-    },
-    responsive: true,
-    maintainAspectRatio: false,
-  };
-
-  return (
-    <div style={{ width: '100%', height: '100%', maxHeight: '500px' }}>
-      <Chart
-        chartType="PieChart"
-        width="100%"
-        height="100%"
-        data={data}
-        options={options}
-      />
-    </div>
-  );
-});
-
-export const CommonChart2 = React.memo(({  Name }) => {
-  // Example data for demonstration
-  const exampleData = [
-    { month: 'Jan', sales: 1000 },
-    { month: 'Feb', sales: 1170 },
-    { month: 'Mar', sales: 660 },
-    { month: 'Apr', sales: 1030 },
-    { month: 'May', sales: 1200 },
-    { month: 'Jun', sales: 950 },
-    { month: 'Jul', sales: 870 },
-  ];
-
-  let data = [
-    ['Month', 'Sales'],
-    ...exampleData.map(item => [item.month, item.sales])
-  ];
-
-  const options = {
-    legend: {
-      position: 'bottom',
-      alignment: 'center',
-      textStyle: {
-        fontSize: 13,
-      },
-    },
-    chartArea: {
-      left: 50,
-      top: 20,
-      width: '80%',
-      height: '70%',
-    },
-    hAxis: {
-      title: 'Month',
-      titleTextStyle: {
-        fontSize: 14,
-        italic: false,
-      },
-      textStyle: {
-        fontSize: 12,
-      },
-    },
-    vAxis: {
-      title: 'Sales',
-      titleTextStyle: {
-        fontSize: 14,
-        italic: false,
-      },
-      minValue: 0,
-      format: '#',
-      textStyle: {
-        fontSize: 12,
-      },
-    },
-    curveType: 'function',
-    lineWidth: 2,
-    pointsVisible: true,
-    pointSize: 5,
-    series: {
-      0: { color: '#4285F4' },
-    },
-    chart: {
-      title: 'Monthly Sales',
-    },
-  };
-
-  return (
-    <div style={{ width: '100%', height: '100%', maxHeight: '500px' }}>
-      <Chart
-        chartType="LineChart"
-        width="100%"
-        height="100%"
-        data={data}
-        options={options}
-      />
-    </div>
-  );
-});
 
 const Dashboard = () => {
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -142,22 +13,27 @@ const Dashboard = () => {
     const [data, setData] = useState(null);
     const [transactions, setTransactions] = useState([]);
 
-
     useEffect(() => {
-      // Fetch data from the API
-      const fetchTransactions = async () => {
+      const fetchData = async () => {
         try {
-          const response = await fetch('https://deepsparkle.net/api/transactions.php');
-          const data = await response.json();
-          setTransactions(data);
+          // Fetch data from the first API
+          const response1 = await axios.get('https://deepsparkle.net/api/dashboard.php');
+          setData(response1.data.data[0]);
+    
+          // Fetch data from the second API
+          const response2 = await fetch('https://deepsparkle.net/api/transactions.php');
+          const data2 = await response2.json();
+          setTransactions(data2);
         } catch (error) {
-          console.error('Error fetching transactions:', error);
+          console.error('Error fetching data', error);
         }
       };
+    
+      fetchData();
+    }, []); // Add any dependencies inside this array if needed
+    
   
-      fetchTransactions();
-    }, []);
-  
+    console.log(data)
 
     if (!data) {
       return <div>Loading...</div>;
@@ -271,7 +147,7 @@ const Dashboard = () => {
             <p>₹ {data.total_credit_amount}</p>
           </div>
           <div className=" h-[100%] justify-center w-[50%] ">
-          <p className="font-semibold">Total Credit</p>
+          <p className="font-semibold">Total Debit</p>
           <p>₹ {data.total_debit_amount}</p>
           </div>
       </div>

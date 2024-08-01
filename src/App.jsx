@@ -23,6 +23,8 @@ import Dashboard from "./pages/Dashboard.jsx";
 import PcfModal from "./components/FinancePage/PcfModal.jsx";
 import CreditForm from "./components/Credit_debit/CreditForm.jsx";
 import OrderForm from "./components/Orders/Orders.jsx";
+import TransactionForm from "./components/Account/TransactionForm.jsx";
+
 
 const App = () => {
 
@@ -111,6 +113,11 @@ const App = () => {
           <Route path="/order" 
           element={
           <ProtectedRoute element={<OrderForm />} key={"Order-page"} />
+           } 
+          />
+          <Route path="/account" 
+          element={
+          <ProtectedRoute element={<TransactionForm />} key={"Transction-page"} />
            } 
           />
           <Route path="/cancellationReport" 

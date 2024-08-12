@@ -44,9 +44,7 @@ const TransactionForm = () => {
         date: '',
         trans_type: 'credit',
         amount: '',
-        rate: '',
-        quantity: '',
-        total: '',
+        description: '',  // Add description to the initial form data
     };
 
     const [data, setData] = useState(initialFormData);
@@ -54,19 +52,10 @@ const TransactionForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setData(prevData => {
-            const newData = {
-                ...prevData,
-                [name]: value
-            };
-            if (name === 'rate' || name === 'quantity') {
-                // Calculate total amount when rate or quantity changes
-                const rate = parseFloat(newData.rate) || 0;
-                const quantity = parseFloat(newData.quantity) || 0;
-                newData.total = rate * quantity;
-            }
-            return newData;
-        });
+        setData(prevData => ({
+            ...prevData,
+            [name]: value
+        }));
     };
 
     const validate = () => {
@@ -74,8 +63,7 @@ const TransactionForm = () => {
         if (!data.date) tempErrors.date = 'This field is required.';
         if (!data.trans_type) tempErrors.trans_type = 'This field is required.';
         if (!data.amount) tempErrors.amount = 'This field is required.';
-        if (!data.rate) tempErrors.rate = 'This field is required.';
-        if (!data.quantity) tempErrors.quantity = 'This field is required.';
+        if (!data.description) tempErrors.description = 'This field is required.';  // Add validation for description
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0;
     };
@@ -83,32 +71,27 @@ const TransactionForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validate()) {
-            if (isEditing) {
-                apiInstance("/transactions.php", "POST", { ...data, id: editId })
-                    .then((responseData) => {
-                        if (responseData.status === 200) {
-                            toast.success("Transaction Updated");
-                            setData(initialFormData);
-                            setIsEditing(false);
-                            setEditId(null);
-                            fetchTransactions(); // Refresh the transactions list
-                            setActiveTab('allTransactions');
-                        } else {
-                            toast.error("Error Occurred");
-                        }
-                    })
-            } else {
-                apiInstance("/transactions.php", "PUT", data)
-                    .then((responseData) => {
-                        if (responseData.status === 200) {
-                            toast.success("Transaction Added");
-                            setData(initialFormData);
-                            fetchTransactions(); // Refresh the transactions list
-                        } else {
-                            toast.error("Error Occurred");
-                        }
-                    })
-            }
+            const apiMethod = isEditing ? "POST" : "PUT";
+            const apiData = isEditing ? { ...data, id: editId } : data;
+
+            console.log("Submitting data:", apiData); // Debugging: log the data being submitted
+
+            apiInstance("/transactions.php", apiMethod, apiData)
+                .then((responseData) => {
+                    if (responseData.status === 200) {
+                        toast.success(`Transaction ${isEditing ? "Updated" : "Added"}`);
+                        setData(initialFormData);
+                        setIsEditing(false);
+                        setEditId(null);
+                        fetchTransactions(); // Refresh the transactions list
+                        setActiveTab('allTransactions');
+                    } else {
+                        toast.error("Error Occurred");
+                    }
+                })
+                .catch(() => {
+                    toast.error("An error occurred while submitting the transaction");
+                });
         }
     };
 
@@ -126,15 +109,12 @@ const TransactionForm = () => {
             date: transaction.date,
             trans_type: transaction.trans_type,
             amount: transaction.amount,
-            rate: transaction.rate,
-            quantity: transaction.quantity,
-            total: transaction.total,
+            description: transaction.description,  // Include description in the edit data
         });
         setEditId(transaction.id);
         setIsEditing(true);
         setActiveTab('addTransaction');
     };
-
 
     return (
         <>
@@ -169,6 +149,7 @@ const TransactionForm = () => {
                                             <th className="py-2 px-4 border-b">Date</th>
                                             <th className="py-2 px-4 border-b">Transaction ID</th>
                                             <th className="py-2 px-4 border-b">Transaction Type</th>
+                                            <th className="py-2 px-4 border-b">Description</th>
                                             <th className="py-2 px-4 border-b">Amount</th>
                                             <th className="py-2 px-4 border-b">Action</th>
                                         </tr>
@@ -179,6 +160,7 @@ const TransactionForm = () => {
                                                 <td className="py-2 px-4 justify-start border-b">{transaction.date}</td>
                                                 <td className="py-2 px-4 text-center border-b">{transaction.transid}</td>
                                                 <td className="py-2 px-4 text-center border-b">{transaction.trans_type}</td>
+                                                <td className="py-2 px-4 text-center border-b">{transaction.description}</td>
                                                 <td className="py-2 px-4 text-center border-b">₹ {transaction.amount}</td>
                                                 <td className="py-2 px-4 text-center cursor-pointer border-b">
                                                     <i
@@ -229,6 +211,17 @@ const TransactionForm = () => {
                                         className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount}</p>}
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 text-lg font-medium">Description:</label>
+                                    <input
+                                        type="text"
+                                        name="description"
+                                        value={data.description}
+                                        onChange={handleChange}
+                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                                 </div>
                                 <div className="text-center">
                                     <button

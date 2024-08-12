@@ -4,6 +4,7 @@ import { AppContext } from "../../context/AppContext";
 import apiInstance from "../../api/apiInstance";
 import { toast } from "react-toastify";
 import Select from 'react-select';
+import DateRangePicker from "./DateRangePicker";
 
 
 const OrderForm = () => {
@@ -25,8 +26,42 @@ const OrderForm = () => {
     const [selectedFabric, setSelectedFabric] = useState(null);
     const [showAddFabric, setShowAddFabric] = useState(false);
     const [newFabricName, setNewFabricName] = useState('');
+    const [filterDateRange , setFilterDateRange] = useState(null);
+    const [filterJson , setFilterJson] = useState(null);
+    const [isFilterVisible, setFilterVisible] = useState(false);
 
+    const toggleFilterVisibility = () => {
+        setFilterVisible(!isFilterVisible);
+      };
 
+    const [formState, setFormState] = useState({
+        formNo: '',
+        dateRange: null,
+        selectedParties: [],
+        selectedFabrics: []
+      });
+
+      useEffect(() => {
+        setFormState((prevState) => ({
+          ...prevState,
+          dateRange: filterDateRange
+        }));
+      }, [filterDateRange]);
+
+      const handleFilterInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormState((prevState) => ({
+          ...prevState,
+          [name]: value
+        }));
+      };
+
+      const handleFilterSelectChange = (selectedOptions, action) => {
+        setFormState((prevState) => ({
+          ...prevState,
+          [action.name]: selectedOptions
+        }));
+      };
 
     const getTrimmedUserId = (userId) => {
         return userId.replace(/^LNUSR/, '');
@@ -37,8 +72,6 @@ const OrderForm = () => {
             setUserID(getTrimmedUserId(activeUserData.user_id));
         }
     }, [activeUserData]);
-
-   // console.log(userID)
 
     const fetchOrders = (page) => {
         setIsLoading(true);
@@ -61,7 +94,6 @@ const OrderForm = () => {
     useEffect(() => {
         fetchOrders(currentPage);
     }, [currentPage]);
-    
 
     const fetchPartyNames = () => {
         apiInstance("https://deepsparkle.net/api/getParticulars.php", "GET")
@@ -174,8 +206,6 @@ const OrderForm = () => {
         }));
     };
 
-    
-
     const initialFormData = {
         FormNo: '',
         Date: '',
@@ -256,7 +286,6 @@ const OrderForm = () => {
     };
 
     const handleEdit = (order) => {
-
         setData({
             ...order,
             added_by: userID,
@@ -272,6 +301,32 @@ const OrderForm = () => {
         if (newPage > 0 && newPage <= totalPages) {
             setCurrentPage(newPage);
         }
+    };
+
+    useEffect(() => {
+        const filterJson = {
+          form_no: formState.formNo || '',
+          start_date: formState.dateRange?.startDate || '',
+          end_date: formState.dateRange?.endDate || '',
+          fabrics: formState.selectedFabrics.map(fabric => fabric.value).join(",") || '',
+          parties: formState.selectedParties.map(party => party.value).join(",") || ''
+        };
+    
+        const allFieldsFilled = filterJson.form_no && filterJson.start_date && filterJson.end_date && filterJson.fabrics && filterJson.parties;
+    
+        if (allFieldsFilled) {
+          setFilterJson(filterJson);
+        }
+    }, [formState]);
+
+    const clearFilter = () => {
+        setFormState({
+            formNo: '',
+            dateRange: null,
+            selectedFabrics: [],
+            selectedParties: [],
+        });
+        setFilterDateRange(null);
     };
 
     return (
@@ -300,7 +355,56 @@ const OrderForm = () => {
 
                         {activeTab === 'allOrders' ? (
                             <div>
-                                <h2 className="text-2xl font-semibold mb-4 cursor-pointer">All Orders <i className="fa-solid fa-filter"></i></h2>
+                                <h2 className="text-2xl font-semibold mb-4 cursor-pointer">All Orders <i className="fa-solid fa-filter"
+                                onClick={toggleFilterVisibility}
+                                ></i></h2>
+                               {isFilterVisible && (
+                                                <div className='border border-blue-400 w-full mb-4 rounded-lg shadow-md'>
+                                                  <div className='flex p-2'>
+                                                    <div className='flex flex-col mr-2'>
+                                                      <label>Form No:</label>
+                                                      <input
+                                                        type='number'
+                                                        name='formNo'
+                                                        value={formState.formNo}
+                                                        onChange={handleFilterInputChange}
+                                                        className='border px-2 py-1 rounded-md'
+                                                        placeholder='Form No'
+                                                      />
+                                                    </div>
+                                                    <div className='flex flex-col mr-2'>
+                                                      <label>Date Range:</label>
+                                                      <DateRangePicker value={filterDateRange} setValue={setFilterDateRange} />
+                                                    </div>
+                                                    <div className='flex flex-col mr-2'>
+                                                      <label>Party Name:</label>
+                                                      <Select
+                                                        name='selectedParties'
+                                                        options={partyNames}
+                                                        isMulti
+                                                        value={formState.selectedParties}
+                                                        onChange={handleFilterSelectChange}
+                                                        className='border'
+                                                      />
+                                                    </div>
+                                                    <div className='flex flex-col mr-2'>
+                                                      <label>Fabric:</label>
+                                                      <Select
+                                                        name='selectedFabrics'
+                                                        options={fabricNames}
+                                                        isMulti
+                                                        value={formState.selectedFabrics}
+                                                        onChange={handleFilterSelectChange}
+                                                        className='border'
+                                                      />
+                                                    </div>
+                                                    <div className='flex flex-row gap-2 mr-2'>
+                                                      <button className='h-9 p-1 mt-6 bg-green-500 text-white rounded-md border'>Search</button>
+                                                      <button className='h-9 p-1 mt-6 bg-black text-white rounded-md border' onClick={clearFilter}>Clear</button>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )}
                                 {isLoading ? (
                                     <p>Loading...</p>
                                 ) : (

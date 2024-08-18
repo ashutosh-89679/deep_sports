@@ -33,7 +33,7 @@ const Dashboard = () => {
     }, []); // Add any dependencies inside this array if needed
     
   
-    console.log(data)
+    //console.log(data)
 
     if (!data) {
       return <div>Loading...</div>;

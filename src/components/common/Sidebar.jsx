@@ -12,8 +12,6 @@ const Sidebar = ({ isSidebarVisible, setIsSidebarVisible }) => {
   const { updateUserDetails } = useStore();
   const { activeUserData, setActiveUserData } = useContext(AppContext);
 
-
-
   useEffect(() => {
     // This function will run only once when the component is mounted
     updateUserDetails(activeUserData);

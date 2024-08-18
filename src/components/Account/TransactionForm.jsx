@@ -44,9 +44,11 @@ const TransactionForm = () => {
         date: '',
         trans_type: 'credit',
         amount: '',
-        description: '',  // Add description to the initial form data
+        description: '',
+        type: 'cash', // Default value for type
     };
-
+    
+   
     const [data, setData] = useState(initialFormData);
     const [errors, setErrors] = useState({});
 
@@ -63,10 +65,12 @@ const TransactionForm = () => {
         if (!data.date) tempErrors.date = 'This field is required.';
         if (!data.trans_type) tempErrors.trans_type = 'This field is required.';
         if (!data.amount) tempErrors.amount = 'This field is required.';
-        if (!data.description) tempErrors.description = 'This field is required.';  // Add validation for description
+        if (!data.description) tempErrors.description = 'This field is required.';
+        if (data.type === "") tempErrors.type = 'This field is required.'; 
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0;
     };
+    
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -74,7 +78,7 @@ const TransactionForm = () => {
             const apiMethod = isEditing ? "POST" : "PUT";
             const apiData = isEditing ? { ...data, id: editId } : data;
 
-            console.log("Submitting data:", apiData); // Debugging: log the data being submitted
+           // console.log("Submitting data:", apiData); // Debugging: log the data being submitted
 
             apiInstance("/transactions.php", apiMethod, apiData)
                 .then((responseData) => {
@@ -149,6 +153,7 @@ const TransactionForm = () => {
                                             <th className="py-2 px-4 border-b">Date</th>
                                             <th className="py-2 px-4 border-b">Transaction ID</th>
                                             <th className="py-2 px-4 border-b">Transaction Type</th>
+                                            <th className="py-2 px-4 border-b">Payment Type</th>
                                             <th className="py-2 px-4 border-b">Description</th>
                                             <th className="py-2 px-4 border-b">Amount</th>
                                             <th className="py-2 px-4 border-b">Action</th>
@@ -160,6 +165,7 @@ const TransactionForm = () => {
                                                 <td className="py-2 px-4 justify-start border-b">{transaction.date}</td>
                                                 <td className="py-2 px-4 text-center border-b">{transaction.transid}</td>
                                                 <td className="py-2 px-4 text-center border-b">{transaction.trans_type}</td>
+                                                <td className="py-2 px-4 text-center border-b">{transaction.type}</td>
                                                 <td className="py-2 px-4 text-center border-b">{transaction.description}</td>
                                                 <td className="py-2 px-4 text-center border-b">₹ {transaction.amount}</td>
                                                 <td className="py-2 px-4 text-center cursor-pointer border-b">
@@ -201,6 +207,21 @@ const TransactionForm = () => {
                                         {errors.trans_type && <p className="text-red-500 text-sm mt-1">{errors.trans_type}</p>}
                                     </div>
                                 </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 text-lg font-medium">Type:</label>
+                                    <select
+                                        name="type"
+                                        value={data.type}
+                                        onChange={handleChange}
+                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="ac">AC</option>
+                                    </select>
+                                    {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
+                                </div>
+
                                 <div className="mb-6">
                                     <label className="block text-gray-700 text-lg font-medium">Amount:</label>
                                     <input

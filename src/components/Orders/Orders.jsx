@@ -4,20 +4,18 @@ import { AppContext } from "../../context/AppContext";
 import apiInstance from "../../api/apiInstance";
 import { toast } from "react-toastify";
 import Select from 'react-select';
-import DateRangePicker from "./DateRangePicker";
+import DataTable from 'react-data-table-component';
 
 
 const OrderForm = () => {
     const [userID, setUserID] = useState('');
-    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+    const [isSidebarVisible, setIsSidebarVisible] = useState(false);
     const { activeUserData } = useContext(AppContext);
     const [activeTab, setActiveTab] = useState('allOrders');
     const [orders, setOrders] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
-    const [isEditing, setIsEditing] = useState(false); 
-    const [editId, setEditId] = useState(null); 
+    const [isEditing, setIsEditing] = useState(false);
+    const [editId, setEditId] = useState(null);
     const [partyNames, setPartyNames] = useState([]);
     const [selectedParty, setSelectedParty] = useState(null);
     const [showAddParty, setShowAddParty] = useState(false);
@@ -26,42 +24,7 @@ const OrderForm = () => {
     const [selectedFabric, setSelectedFabric] = useState(null);
     const [showAddFabric, setShowAddFabric] = useState(false);
     const [newFabricName, setNewFabricName] = useState('');
-    const [filterDateRange , setFilterDateRange] = useState(null);
-    const [filterJson , setFilterJson] = useState(null);
-    const [isFilterVisible, setFilterVisible] = useState(false);
-
-    const toggleFilterVisibility = () => {
-        setFilterVisible(!isFilterVisible);
-      };
-
-    const [formState, setFormState] = useState({
-        formNo: '',
-        dateRange: null,
-        selectedParties: [],
-        selectedFabrics: []
-      });
-
-      useEffect(() => {
-        setFormState((prevState) => ({
-          ...prevState,
-          dateRange: filterDateRange
-        }));
-      }, [filterDateRange]);
-
-      const handleFilterInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormState((prevState) => ({
-          ...prevState,
-          [name]: value
-        }));
-      };
-
-      const handleFilterSelectChange = (selectedOptions, action) => {
-        setFormState((prevState) => ({
-          ...prevState,
-          [action.name]: selectedOptions
-        }));
-      };
+    const [filteredOrders, setFilteredOrders] = useState([]);
 
     const getTrimmedUserId = (userId) => {
         return userId.replace(/^LNUSR/, '');
@@ -73,17 +36,17 @@ const OrderForm = () => {
         }
     }, [activeUserData]);
 
-    const fetchOrders = (page) => {
+    const fetchOrders = () => {
         setIsLoading(true);
-        apiInstance(`/getOrders.php?page=${page}`, "GET")
+        apiInstance('/getOrders.php', "GET")
             .then((responseData) => {
                 if (responseData.status === 200) {
                     setOrders(responseData.data.data);
-                    setTotalPages(Math.ceil(responseData.data.total_count / 10)); // Assuming 10 orders per page
+                    setFilteredOrders(responseData.data.data);
                 }
             })
             .catch((error) => {
-                toast.error("Error fetching orders");
+                alert("Error fetching orders");
                 console.error(error);
             })
             .finally(() => {
@@ -92,11 +55,13 @@ const OrderForm = () => {
     };
 
     useEffect(() => {
-        fetchOrders(currentPage);
-    }, [currentPage]);
+        fetchOrders();
+        fetchPartyNames();
+        fetchFabricNames();
+    }, []);
 
     const fetchPartyNames = () => {
-        apiInstance("https://deepsparkle.net/api/getParticulars.php", "GET")
+        apiInstance("/getParticulars.php", "GET")
             .then(response => {
                 const formattedParties = response.data.map(party => ({
                     value: party.id,
@@ -105,39 +70,31 @@ const OrderForm = () => {
                 setPartyNames(formattedParties);
             })
             .catch(error => {
-              
                 console.error(error);
             });
     };
 
     const addPartyName = (e) => {
+        e.preventDefault();
         if(newPartyName !== ''){
-            apiInstance("https://deepsparkle.net/api/getParticulars.php", "PUT", { name: newPartyName })
+            apiInstance("/getParticulars.php", "PUT", { name: newPartyName })
             .then(response => {
-                fetchPartyNames(); // Refetch party names to update the dropdown
-                setShowAddParty(false); // Hide the add input
-                setNewPartyName(''); // Reset the input field
-                toast.success("Party name added successfully");
+                fetchPartyNames();
+                setShowAddParty(false);
+                setNewPartyName('');
+                alert("Party name added successfully");
             })
             .catch(error => {
-                toast.error("Failed to add party name");
+                alert("Failed to add party name");
                 console.error(error);
             });
         } else {
-            toast.error("Please enter a party name");
+            alert("Please enter a party name");
         }
-        
     };
-
-    useEffect(() => {
-        fetchPartyNames();
-    }, []);
 
     const handleNewPartyChange = (e) => {
         setNewPartyName(e.target.value);
-        setData({
-            PartyName: selectedParty?.value,
-        });
     };
 
     const handleAddPartyClick = () => {
@@ -166,27 +123,22 @@ const OrderForm = () => {
             });
     };
 
-    useEffect(() => {
-        fetchPartyNames();
-        fetchFabricNames();
-    }, []);
-
     const addFabricName = (e) => {
         e.preventDefault();
         if (newFabricName !== '') {
             apiInstance("/getFabric.php", "PUT", { name: newFabricName })
                 .then(response => {
-                    fetchFabricNames(); // Refetch fabric names to update the dropdown
-                    setShowAddFabric(false); // Hide the add input
-                    setNewFabricName(''); // Reset the input field
-                    toast.success("Fabric name added successfully");
+                    fetchFabricNames();
+                    setShowAddFabric(false);
+                    setNewFabricName('');
+                    alert("Fabric name added successfully");
                 })
                 .catch(error => {
-                    toast.error("Failed to add fabric name");
+                    alert("Failed to add fabric name");
                     console.error(error);
                 });
         } else {
-            toast.error("Please enter a fabric name");
+            alert("Please enter a fabric name");
         }
     };
 
@@ -229,7 +181,7 @@ const OrderForm = () => {
         const { name, value } = e.target;
         let updatedData = { ...data, [name]: value };
     
-        if ( data.Rate !== '' && data.Quantity !== '') {
+        if (data.Rate !== '' && data.Quantity !== '') {
             updatedData.Total = Number(updatedData.Rate) * Number(updatedData.Quantity);
         }
     
@@ -262,15 +214,15 @@ const OrderForm = () => {
             apiInstance(url, method, data)
                 .then((responseData) => {
                     if (responseData.status === 200) {
-                        toast.success(isEditing ? "Order Updated" : "Order Added");
+                        alert(isEditing ? "Order Updated" : "Order Added");
                         setData(initialFormData);
                         setIsEditing(false);
                         setEditId(null);
-                        fetchOrders(currentPage);
+                        fetchOrders();
                     }
                 })
                 .catch((error) => {
-                    toast.error(isEditing ? "Error updating order" : "Error adding order");
+                    alert(isEditing ? "Error updating order" : "Error adding order");
                     console.error(error);
                 });
         }
@@ -292,42 +244,108 @@ const OrderForm = () => {
         });
         setSelectedFabric(fabricNames.find(option => option.value === order.Fabric));
         setSelectedParty(partyNames.find(option => option.value === order.PartyName));
-        setEditId(order.id); 
+        setEditId(order.id);
         setIsEditing(true);
-        setActiveTab('addOrder'); 
+        setActiveTab('addOrder');
     };
 
-    const handlePageChange = (newPage) => {
-        if (newPage > 0 && newPage <= totalPages) {
-            setCurrentPage(newPage);
-        }
-    };
 
-    useEffect(() => {
-        const filterJson = {
-          form_no: formState.formNo || '',
-          start_date: formState.dateRange?.startDate || '',
-          end_date: formState.dateRange?.endDate || '',
-          fabrics: formState.selectedFabrics.map(fabric => fabric.value).join(",") || '',
-          parties: formState.selectedParties.map(party => party.value).join(",") || ''
-        };
-    
-        const allFieldsFilled = filterJson.form_no && filterJson.start_date && filterJson.end_date && filterJson.fabrics && filterJson.parties;
-    
-        if (allFieldsFilled) {
-          setFilterJson(filterJson);
-        }
-    }, [formState]);
+    const columns = [
+        {
+            name: 'Form No',
+            selector: row => row.FormNo,
+            sortable: true,
+        },
+        {
+            name: 'Date',
+            selector: row => row.Date,
+            sortable: true,
+        },
+        {
+            name: 'Party Name',
+            selector: row => partyNames.find(option => option.value === row.PartyName)?.label,
+            sortable: true,
+        },
+        {
+            name: 'Particulars',
+            selector: row => row.Particulars,
+            sortable: true,
+        },
+        {
+            name: 'Fabric',
+            selector: row => fabricNames.find(option => option.value === row.Fabric)?.label,
+            sortable: true,
+        },
+        {
+            name: 'Quantity',
+            selector: row => row.Quantity,
+            sortable: true,
+        },
+        {
+            name: 'Rate',
+            selector: row => row.Rate,
+            sortable: true,
+        },
+        {
+            name: 'Design',
+            selector: row => row.Design,
+            sortable: true,
+        },
+        {
+            name: 'Total',
+            selector: row => row.Total,
+            sortable: true,
+        },
+        {
+            name: 'Grand Total',
+            selector: row => row.GrandTotal,
+            sortable: true,
+        },
+        {
+            name: 'Paid',
+            selector: row => row.Paid,
+            sortable: true,
+        },
+        {
+            name: 'Balance',
+            selector: row => row.Balance,
+            sortable: true,
+        },
+        {
+            name: 'Added By',
+            selector: row =>row.user_full_name,
+            sortable: true,
+        },
+        {
+            name: 'Action',
+            cell: row => (
+                row.added_by === userID ? (
+                    <button
+                        onClick={() => handleEdit(row)}
+                        className="text-blue-500 hover:text-blue-700"
+                    >
+                        Edit
+                    </button>
+                ) : (
+                    <span>No Access</span>
+                )
+            ),
+        },
+    ];
 
-    const clearFilter = () => {
-        setFormState({
-            formNo: '',
-            dateRange: null,
-            selectedFabrics: [],
-            selectedParties: [],
+    
+
+    const handleFilter = (e) => {
+        const value = e.target.value.toLowerCase();
+        const newData = orders.filter(row => {
+            return row.FormNo.toLowerCase().includes(value) ||
+                   row.Date.toLowerCase().includes(value) ||
+                   partyNames.find(option => option.value === row.PartyName)?.label.toLowerCase().includes(value) ||
+                   row.Particulars.toLowerCase().includes(value);
         });
-        setFilterDateRange(null);
+        setFilteredOrders(newData);
     };
+
 
     return (
         <>
@@ -336,159 +354,59 @@ const OrderForm = () => {
                     isSidebarVisible={isSidebarVisible}
                     setIsSidebarVisible={setIsSidebarVisible}
                 />
-                <div className="flex w-full mt-6 justify-center bg-gray-100">
-                    <div className="w-full mb-4 p-8 bg-white shadow-md rounded-lg mx-4">
-                        <div className="flex text-sm mx-[500px] rounded-lg mb-6">
+                <div className="flex w-full p-6 mt-2 justify-center bg-gray-100">
+                    <div className="w-full mb-2 p-8 bg-white shadow-md rounded-lg mx-4">
+                        <div className="flex text-xs text-wrap mx-[500px] rounded-lg">
                             <button
                                 onClick={() => handleTabClick('allOrders')}
-                                className={`w-1/2 py-3 ${activeTab === 'allOrders' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-tl-md focus:outline-none`}
+                                className={`w-1/2 text-xs px-2 py-2 ${activeTab === 'allOrders' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-tl-md focus:outline-none`}
                             >
                                 All Orders
                             </button>
                             <button
                                 onClick={() => handleTabClick('addOrder')}
-                                className={`w-1/2 py-3 ${activeTab === 'addOrder' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-tr-md focus:outline-none`}
+                                className={`w-1/2 text-xs  py-2 px-2 ${activeTab === 'addOrder' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-tr-md focus:outline-none`}
                             >
                                 Add Order
                             </button>
                         </div>
 
+                        
                         {activeTab === 'allOrders' ? (
-                            <div>
-                                <h2 className="text-2xl font-semibold mb-4 cursor-pointer">All Orders <i className="fa-solid fa-filter"
-                                onClick={toggleFilterVisibility}
-                                ></i></h2>
-                               {isFilterVisible && (
-                                                <div className='border border-blue-400 w-full mb-4 rounded-lg shadow-md'>
-                                                  <div className='flex p-2'>
-                                                    <div className='flex flex-col mr-2'>
-                                                      <label>Form No:</label>
-                                                      <input
-                                                        type='number'
-                                                        name='formNo'
-                                                        value={formState.formNo}
-                                                        onChange={handleFilterInputChange}
-                                                        className='border px-2 py-1 rounded-md'
-                                                        placeholder='Form No'
-                                                      />
-                                                    </div>
-                                                    <div className='flex flex-col mr-2'>
-                                                      <label>Date Range:</label>
-                                                      <DateRangePicker value={filterDateRange} setValue={setFilterDateRange} />
-                                                    </div>
-                                                    <div className='flex flex-col mr-2'>
-                                                      <label>Party Name:</label>
-                                                      <Select
-                                                        name='selectedParties'
-                                                        options={partyNames}
-                                                        isMulti
-                                                        value={formState.selectedParties}
-                                                        onChange={handleFilterSelectChange}
-                                                        className='border'
-                                                      />
-                                                    </div>
-                                                    <div className='flex flex-col mr-2'>
-                                                      <label>Fabric:</label>
-                                                      <Select
-                                                        name='selectedFabrics'
-                                                        options={fabricNames}
-                                                        isMulti
-                                                        value={formState.selectedFabrics}
-                                                        onChange={handleFilterSelectChange}
-                                                        className='border'
-                                                      />
-                                                    </div>
-                                                    <div className='flex flex-row gap-2 mr-2'>
-                                                      <button className='h-9 p-1 mt-6 bg-green-500 text-white rounded-md border'>Search</button>
-                                                      <button className='h-9 p-1 mt-6 bg-black text-white rounded-md border' onClick={clearFilter}>Clear</button>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              )}
-                                {isLoading ? (
-                                    <p>Loading...</p>
-                                ) : (
-                                    <>
-                                        <table className="min-w-full border rounded-lg bg-white">
-                                            <thead className='bg-gray-100'>
-                                                <tr className='text-sm'>
-                                                    <th className="py-2 px-4 border-b">Form No</th>
-                                                    <th className="py-2 px-4 border-b">Date</th>
-                                                    <th className="py-2 px-4 border-b">Party Name</th>
-                                                    <th className="py-2 px-4 border-b">Particulars</th>
-                                                    <th className="py-2 px-4 border-b">Fabric</th>
-                                                    <th className="py-2 px-4 border-b">Quantity</th>
-                                                    <th className="py-2 px-4 border-b">Rate</th>
-                                                    <th className="py-2 px-4 border-b">Design</th>
-                                                    <th className="py-2 px-4 border-b">Total</th>
-                                                    <th className="py-2 px-4 border-b">Grand Total</th>
-                                                    <th className="py-2 px-4 border-b">Paid</th>
-                                                    <th className="py-2 px-4 border-b">Balance</th>
-                                                    <th className="py-2 px-4 border-b">Added By</th>
-                                                    <th className="py-2 px-4 border-b">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {orders.length > 0 ? (
-                                                    orders.map((order, index) => (
-                                                        <tr key={index} className='text-xs text-center h-8'>
-                                                            <td className="py-2 px-4 border-b">{order.FormNo}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Date}</td>
-                                                            <td className="py-2 px-4 border-b">{partyNames.find(option => option.value === order.PartyName)?.label}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Particulars}</td>
-                                                            <td className="py-2 px-4 border-b">{fabricNames.find(option => option.value === order.Fabric)?.label}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Quantity}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Rate}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Design}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Total}</td>
-                                                            <td className="py-2 px-4 border-b">{order.GrandTotal}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Paid}</td>
-                                                            <td className="py-2 px-4 border-b">{order.Balance}</td>
-                                                            <td className="py-2 px-4 border-b">{order.user_full_name}</td>
-                                                            <td className="py-2 px-4 border-b">
-                                                            {order.added_by === userID ? (
-                                                                      <button
-                                                                        onClick={() => handleEdit(order)}
-                                                                        className="text-blue-500 hover:text-blue-700"
-                                                                      >
-                                                                        Edit
-                                                                      </button>
-                                                                    ) : (
-                                                                      <span>No Access</span> // You can replace this with any placeholder or leave it empty
-                                                                    )}
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr>
-                                                        <td colSpan="13" className="py-4 text-center">No Orders Found</td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                        <div className="mt-4 flex justify-between items-center">
-                                            <button
-                                                onClick={() => handlePageChange(currentPage - 1)}
-                                                className="px-4 py-2 bg-gray-300 rounded-lg"
-                                                disabled={currentPage === 1}
-                                            >
-                                                Previous
-                                            </button>
-                                            <span>
-                                                Page {currentPage} of {totalPages}
-                                            </span>
-                                            <button
-                                                onClick={() => handlePageChange(currentPage + 1)}
-                                                className="px-4 py-2 bg-gray-300 rounded-lg"
-                                                disabled={currentPage === totalPages}
-                                            >
-                                                Next
-                                            </button>
+                            <div className=''>
+                                <div className='flex justify-between'>
+                                    <h2 className="text-2xl font-semibold mb-4 cursor-pointer">All Orders </h2>
+
+                                        <div className='flex gap-3 text-xs  '>
+                                            <button className='p-2 border h-8 rounded-md bg-gray-400 text-white'  >Export</button>
+                                        <input
+                                                type="text"
+                                                placeholder="Filter records"
+                                                onChange={handleFilter}
+                                                className="p-2 mb-4 border rounded"
+                                            />
                                         </div>
-                                    </>
-                                )}
+                                            
+                                </div>
+                                <div className='w-[1150px]'>
+                                    <DataTable
+                                                columns={columns}
+                                                data={filteredOrders}
+                                                pagination
+                                                paginationPerPage={10}
+                                                paginationRowsPerPageOptions={[10, 20, 30]}
+                                                highlightOnHover
+                                                pointerOnHover
+                                                sortable
+                                                fixedHeader={true}
+                                            />
+                                </div>
+                                    
+                                        
+                                    
+                                
                             </div>
-                        ) : (
+                        ): (
                             <div>
                                 <h2 className="text-2xl font-semibold mb-4">Add Order</h2>
                                 <form onSubmit={handleSubmit}>

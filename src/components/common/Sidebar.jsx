@@ -110,7 +110,7 @@ return (
         </Link>
 
         {/* Credit */}
-        <Link to={"/credit"}>
+      {/*   <Link to={"/credit"}>
             <div
               className={`flex pl-2 mb-2  square-box items-center gap-4 mt-2 py-2 group hover:shadow-lg hover:bg-[#090909] ${
                 pathname === "/credit" ? "bg-[#007FFF]" : ""
@@ -144,7 +144,7 @@ return (
                 </p>
               )}
             </div>
-          </Link>     
+          </Link>     */} 
             
         {/* Order */}
         <Link to={"/order"}>

@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from "../common/Sidebar";
-import { AppContext } from "../../context/AppContext";
 import apiInstance from "../../api/apiInstance";
 import { toast } from "react-toastify";
+import DataTable from 'react-data-table-component';
+import axios from "axios";
+import { AppContext } from "../../context/AppContext";
+
 
 const TransactionForm = () => {
-    const [userID, setUserID] = useState('');
-    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-    const { activeUserData } = useContext(AppContext);
+    const { isSidebarVisible, setIsSidebarVisible } = useContext(AppContext);
     const [activeTab, setActiveTab] = useState('allTransactions');
+    const { activeUserData } = useContext(AppContext);
     const [transactions, setTransactions] = useState([]);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editId, setEditId] = useState(null);
+    const [filterText, setFilterText] = useState('');
+    const [userID, setUserID] = useState('');
+
 
     const getTrimmedUserId = (userId) => {
         return userId.replace(/^LNUSR/, '');
@@ -23,102 +26,137 @@ const TransactionForm = () => {
         }
     }, [activeUserData]);
 
+    const [formData, setFormData] = useState({
+        date: '',
+        trans_type: '',
+        type: '',
+        trans_acc: '',
+        description: '',
+        amount: '',
+        added_by: userID
+    });
+    const [editingTransactionId, setEditingTransactionId] = useState(null);
+
     useEffect(() => {
         fetchTransactions();
     }, []);
 
     const fetchTransactions = async () => {
         try {
-            const response = await apiInstance("/transactions.php", "GET");
-            if (response.status === 200) {
-                setTransactions(response.data);
-            } else {
-                toast.error("Failed to fetch transactions");
-            }
+            const response = await axios.get('https://deepsparkle.net/api/transactions.php');
+            setTransactions(response.data);
         } catch (error) {
-            toast.error("An error occurred while fetching transactions");
+            console.error('Error fetching transactions:', error);
+            alert('Failed to fetch transactions');
         }
     };
 
-    const initialFormData = {
-        date: '',
-        trans_type: 'credit',
-        amount: '',
-        description: '',
-        type: 'cash', // Default value for type
-    };
-    
-   
-    const [data, setData] = useState(initialFormData);
-    const [errors, setErrors] = useState({});
-
-    const handleChange = (e) => {
+    const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setData(prevData => ({
+        setFormData(prevData => ({
             ...prevData,
             [name]: value
         }));
     };
 
-    const validate = () => {
-        let tempErrors = {};
-        if (!data.date) tempErrors.date = 'This field is required.';
-        if (!data.trans_type) tempErrors.trans_type = 'This field is required.';
-        if (!data.amount) tempErrors.amount = 'This field is required.';
-        if (!data.description) tempErrors.description = 'This field is required.';
-        if (data.type === "") tempErrors.type = 'This field is required.'; 
-        setErrors(tempErrors);
-        return Object.keys(tempErrors).length === 0;
-    };
-    
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (validate()) {
-            const apiMethod = isEditing ? "POST" : "PUT";
-            const apiData = isEditing ? { ...data, id: editId } : data;
-
-           // console.log("Submitting data:", apiData); // Debugging: log the data being submitted
-
-            apiInstance("/transactions.php", apiMethod, apiData)
-                .then((responseData) => {
-                    if (responseData.status === 200) {
-                        toast.success(`Transaction ${isEditing ? "Updated" : "Added"}`);
-                        setData(initialFormData);
-                        setIsEditing(false);
-                        setEditId(null);
-                        fetchTransactions(); // Refresh the transactions list
-                        setActiveTab('allTransactions');
-                    } else {
-                        toast.error("Error Occurred");
-                    }
-                })
-                .catch(() => {
-                    toast.error("An error occurred while submitting the transaction");
-                });
-        }
-    };
-
-    const handleTabClick = (tab) => {
-        setActiveTab(tab);
-        if (tab === 'addTransaction') {
-            setIsEditing(false);
-            setEditId(null);
-            setData(initialFormData);
+        try {
+            if (editingTransactionId) {
+                const response = await axios.put(`https://deepsparkle.net/api/transactions.php?id=${editingTransactionId}`, formData);
+                alert('Transaction updated successfully');
+            } else {
+                const response = await axios.put('https://deepsparkle.net/api/transactions.php', formData);
+                alert('Transaction added successfully');
+            }
+            fetchTransactions();
+            resetForm();
+        } catch (error) {
+            console.error('Error submitting transaction:', error);
+            alert('Failed to submit transaction');
         }
     };
 
     const handleEdit = (transaction) => {
-        setData({
-            date: transaction.date,
-            trans_type: transaction.trans_type,
-            amount: transaction.amount,
-            description: transaction.description,  // Include description in the edit data
-        });
-        setEditId(transaction.id);
-        setIsEditing(true);
+        setFormData(transaction);
+        setEditingTransactionId(transaction.id);
         setActiveTab('addTransaction');
     };
+
+    const resetForm = () => {
+        setFormData({
+            date: '',
+            trans_type: '',
+            type: '',
+            trans_acc: '',
+            description: '',
+            amount: '',
+        });
+        setEditingTransactionId(null);
+    };
+
+    const handleFilterChange = (e) => {
+        setFilterText(e.target.value);
+    };
+
+    const filteredTransactions = transactions.filter(
+        transaction => 
+            transaction.date.toLowerCase().includes(filterText.toLowerCase()) ||
+            transaction.transid.toLowerCase().includes(filterText.toLowerCase()) ||
+            transaction.trans_type.toLowerCase().includes(filterText.toLowerCase()) ||
+            transaction.type.toLowerCase().includes(filterText.toLowerCase()) ||
+            transaction.trans_acc.toLowerCase().includes(filterText.toLowerCase()) ||
+            transaction.description.toLowerCase().includes(filterText.toLowerCase()) ||
+            transaction.amount.toString().includes(filterText)
+    );
+
+    const columns = [
+        {
+            name: 'Date',
+            selector: row => row.date,
+            sortable: true,
+        },
+        {
+            name: 'Transaction ID',
+            selector: row => row.transid,
+            sortable: true,
+        },
+        {
+            name: 'Transaction Type',
+            selector: row => row.trans_type,
+            sortable: true,
+        },
+        {
+            name: 'Payment Type',
+            selector: row => row.type,
+            sortable: true,
+        },
+        {
+            name: 'Account Name',
+            selector: row => row.trans_acc,
+            sortable: true,
+        },
+        {
+            name: 'Description',
+            selector: row => row.description,
+            sortable: true,
+        },
+        {
+            name: 'Amount',
+            selector: row => row.amount,
+            sortable: true,
+            cell: row => `₹ ${row.amount}`,
+        },
+        {
+            name: 'Action',
+            cell: row => (
+                <i
+                    className="fa-solid fa-pen cursor-pointer"
+                    onClick={() => handleEdit(row)}
+                ></i>
+            ),
+        },
+    ];
 
     return (
         <>
@@ -129,16 +167,16 @@ const TransactionForm = () => {
                 />
                 <div className="flex w-full mt-6 justify-center bg-gray-100">
                     <div className="w-full mb-4 p-8 bg-white shadow-md rounded-lg mx-4">
-                        <div className="flex text-sm mx-[500px] rounded-lg mb-6">
+                        <div className="mb-4">
                             <button
-                                onClick={() => handleTabClick('allTransactions')}
-                                className={`w-1/2 py-3 ${activeTab === 'allTransactions' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-tl-md focus:outline-none`}
+                                className={`mr-4 ${activeTab === 'allTransactions' ? 'text-blue-500 font-bold' : ''}`}
+                                onClick={() => setActiveTab('allTransactions')}
                             >
                                 All Transactions
                             </button>
                             <button
-                                onClick={() => handleTabClick('addTransaction')}
-                                className={`w-1/2 py-3 ${activeTab === 'addTransaction' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'} rounded-tr-md focus:outline-none`}
+                                className={`${activeTab === 'addTransaction' ? 'text-blue-500 font-bold' : ''}`}
+                                onClick={() => setActiveTab('addTransaction')}
                             >
                                 Add Transaction
                             </button>
@@ -146,113 +184,117 @@ const TransactionForm = () => {
 
                         {activeTab === 'allTransactions' ? (
                             <div>
-                                <h2 className="text-2xl font-semibold mb-4 cursor-pointer">All Transactions <i className="fa-solid fa-filter"></i></h2>
-                                <table className="min-w-full bg-white border">
-                                    <thead className='bg-gray-100 text-sm'>
-                                        <tr>
-                                            <th className="py-2 px-4 border-b">Date</th>
-                                            <th className="py-2 px-4 border-b">Transaction ID</th>
-                                            <th className="py-2 px-4 border-b">Transaction Type</th>
-                                            <th className="py-2 px-4 border-b">Payment Type</th>
-                                            <th className="py-2 px-4 border-b">Description</th>
-                                            <th className="py-2 px-4 border-b">Amount</th>
-                                            <th className="py-2 px-4 border-b">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {transactions.length > 0 && transactions.map((transaction, index) => (
-                                            <tr key={index}>
-                                                <td className="py-2 px-4 justify-start border-b">{transaction.date}</td>
-                                                <td className="py-2 px-4 text-center border-b">{transaction.transid}</td>
-                                                <td className="py-2 px-4 text-center border-b">{transaction.trans_type}</td>
-                                                <td className="py-2 px-4 text-center border-b">{transaction.type}</td>
-                                                <td className="py-2 px-4 text-center border-b">{transaction.description}</td>
-                                                <td className="py-2 px-4 text-center border-b">₹ {transaction.amount}</td>
-                                                <td className="py-2 px-4 text-center cursor-pointer border-b">
-                                                    <i
-                                                        className="fa-solid fa-pen"
-                                                        onClick={() => handleEdit(transaction)}
-                                                    ></i>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <form onSubmit={handleSubmit}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div>
-                                        <label className="block text-gray-700 text-lg font-medium">Date:</label>
-                                        <input
-                                            type="date"
-                                            name="date"
-                                            value={data.date}
-                                            onChange={handleChange}
-                                            className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 text-lg font-medium">Transaction Type:</label>
-                                        <select
-                                            name="trans_type"
-                                            value={data.trans_type}
-                                            onChange={handleChange}
-                                            className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="credit">Credit</option>
-                                            <option value="debit">Debit</option>
-                                        </select>
-                                        {errors.trans_type && <p className="text-red-500 text-sm mt-1">{errors.trans_type}</p>}
-                                    </div>
-                                </div>
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 text-lg font-medium">Type:</label>
-                                    <select
-                                        name="type"
-                                        value={data.type}
-                                        onChange={handleChange}
-                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="">Select</option>
-                                        <option value="cash">Cash</option>
-                                        <option value="ac">AC</option>
-                                    </select>
-                                    {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
-                                </div>
-
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 text-lg font-medium">Amount:</label>
-                                    <input
-                                        type="number"
-                                        name="amount"
-                                        value={data.amount}
-                                        onChange={handleChange}
-                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount}</p>}
-                                </div>
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 text-lg font-medium">Description:</label>
+                                
+                                <div className="mb-1 flex justify-between">
+                                <h2 className="text-xl font-semibold mb-4 cursor-pointer">All Transactions </h2>
                                     <input
                                         type="text"
-                                        name="description"
-                                        value={data.description}
-                                        onChange={handleChange}
-                                        className="mt-2 p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Filter transactions..."
+                                        value={filterText}
+                                        onChange={handleFilterChange}
+                                        className="w-[400px] text-sm justify-end p-2 border rounded"
                                     />
-                                    {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                                 </div>
-                                <div className="text-center">
-                                    <button
-                                        type="submit"
-                                        className="px-6 py-3 text-white bg-black rounded-md hover:bg-gray-800"
+                                <DataTable
+                                    columns={columns}
+                                    data={filteredTransactions}
+                                    pagination
+                                    paginationPerPage={10}
+                                    paginationRowsPerPageOptions={[10, 20, 30, 50]}
+                                    sortable
+                                />
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="flex space-x-4">
+                                <div className="flex-1">
+                                    <label htmlFor="date" className="block mb-1">Date</label>
+                                    <input
+                                        type="date"
+                                        id="date"
+                                        name="date"
+                                        value={formData.date}
+                                        onChange={handleInputChange}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label htmlFor="trans_type" className="block mb-1">Transaction Type</label>
+                                    <select
+                                        id="trans_type"
+                                        name="trans_type"
+                                        value={formData.trans_type}
+                                        onChange={handleInputChange}
+                                        className="w-full p-2 border rounded"
+                                        required
                                     >
-                                        {isEditing ? "Update Transaction" : "Add Transaction"}
-                                    </button>
+                                        <option value="">Select Type</option>
+                                        <option value="credit">Credit</option>
+                                        <option value="debit">Debit</option>
+                                    </select>
                                 </div>
-                            </form>
+                                <div className="flex-1">
+                                    <label htmlFor="type" className="block mb-1">Payment Type</label>
+                                    <select
+                                        id="type"
+                                        name="type"
+                                        value={formData.type}
+                                        onChange={handleInputChange}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    >
+                                        <option value="">Select Payment Type</option>
+                                        <option value="ac">A/C</option>
+                                        <option value="cash">Cash</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="flex space-x-4">
+                                <div className="flex-1">
+                                    <label htmlFor="trans_acc" className="block mb-1">Account Name</label>
+                                    <input
+                                        type="text"
+                                        id="trans_acc"
+                                        name="trans_acc"
+                                        value={formData.trans_acc}
+                                        onChange={handleInputChange}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label htmlFor="amount" className="block mb-1">Amount</label>
+                                    <input
+                                        type="number"
+                                        id="amount"
+                                        name="amount"
+                                        value={formData.amount}
+                                        onChange={handleInputChange}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label htmlFor="description" className="block mb-1">Description / Particulars</label>
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 border rounded"
+                                    required
+                                ></textarea>
+                            </div>
+                            
+                            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+                                {editingTransactionId ? 'Update Transaction' : 'Add Transaction'}
+                            </button>
+                        </form>
+                        
                         )}
                     </div>
                 </div>

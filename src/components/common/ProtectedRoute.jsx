@@ -27,7 +27,7 @@ const ProtectedRoute = ({ element }) => {
         window.location.href = "/login";
       }
     } catch (error) {
-      toast.error("Error while verifying user");
+      alert("Error while verifying user");
     }
 
     const lsData = getLocalStorage();
@@ -91,7 +91,7 @@ const ProtectedRoute = ({ element }) => {
         setLoading(false);
       })
       .catch((error) => {
-        toast.error("Error while fetching dropdown values");
+        alert("Error while fetching dropdown values");
       });
   }; */
 

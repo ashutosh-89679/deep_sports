@@ -3,37 +3,83 @@ import Sidebar from "../components/common/Sidebar";
 import axios from "axios";
 import IMAGES from "../images";
 import { AppContext } from "../../src/context/AppContext";
+import Select from 'react-select'
+import DateRangePicker from "../components/common/DateRangePicker";
+
 
 
 
 
 const Dashboard = () => {
-    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+    const [isSidebarVisible, setIsSidebarVisible] = useState(false);
     const { activeUserData } = useContext(AppContext);
     const [data, setData] = useState(null);
     const [transactions, setTransactions] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+    const [userOptions , setUserOptions] = useState([]);
+    const filterRef = useRef(null);
+    const [filterData, setFilterData] = useState({
+      user: '',
+      startDate: '',
+      endDate: ''
+    });
+    const [daterange , setDaterange] = useState([]);
+    
+    const toggleFilter = () => setIsOpen(!isOpen);
+
+  // Close the filter if a click is detected outside
+  const handleClickOutside = (event) => {
+    if (filterRef.current && !filterRef.current.contains(event.target)) {
+      setIsOpen(false);
+    }
+  };
+
+
+  const handleUserChange = (selectedOption) => {
+    setFilterData(prevData => ({
+        ...prevData,
+        user: selectedOption ? selectedOption.value : ''
+    }));
+  };
+
+  // Add event listener for clicks outside
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
     useEffect(() => {
       const fetchData = async () => {
         try {
           // Fetch data from the first API
-          const response1 = await axios.get('https://deepsparkle.net/api/dashboard.php');
+          const response1 = await axios.post('https://deepsparkle.net/api/dashboard.php' , filterData);
           setData(response1.data.data[0]);
-    
-          // Fetch data from the second API
-          const response2 = await fetch('https://deepsparkle.net/api/transactions.php');
-          const data2 = await response2.json();
-          setTransactions(data2);
         } catch (error) {
           console.error('Error fetching data', error);
         }
       };
     
       fetchData();
-    }, []); // Add any dependencies inside this array if needed
-    
-  
-    //console.log(data)
+    }, [filterData]); 
+
+    useEffect(() => {
+      const fetchData2 = async () => {
+        try{
+            // Fetch data from the second API
+            const response2 = await fetch('https://deepsparkle.net/api/transactions.php');
+            const data2 = await response2.json();
+            setTransactions(data2);
+                    
+            const response3 = await axios.get('https://deepsparkle.net/api/optionsData.php');
+            setUserOptions(response3.data);
+        } catch (error) {
+          console.error('Error fetching data', error);
+        }
+      }
+      fetchData2();
+    }, [])
 
     if (!data) {
       return <div>Loading...</div>;
@@ -47,6 +93,75 @@ const Dashboard = () => {
 
     const cy = getCurrentYearRange();
 
+    const customStyles = {
+      control: (provided) => ({
+          ...provided,
+          minHeight: '30px', // Decrease the height
+          height: '30px', // Set a specific height
+      }),
+      valueContainer: (provided) => ({
+          ...provided,
+          padding: '0 8px', // Adjust padding to match the smaller size
+      }),
+      input: (provided) => ({
+          ...provided,
+          margin: '0', // Remove any default margin
+          fontSize: '12px', // Adjust font size
+      }),
+      placeholder: (provided) => ({
+          ...provided,
+          fontSize: '12px', // Adjust font size for placeholder
+      }),
+      singleValue: (provided) => ({
+          ...provided,
+          fontSize: '12px', // Adjust font size for selected value
+      }),
+      dropdownIndicator: (provided) => ({
+          ...provided,
+          padding: '4px', // Decrease the size of the dropdown indicator
+      }),
+      clearIndicator: (provided) => ({
+          ...provided,
+          padding: '4px', // Decrease the size of the clear indicator
+      }),
+      menu: (provided) => ({
+          ...provided,
+          fontSize: '12px', // Adjust font size for dropdown options
+      }),
+      option: (provided) => ({
+          ...provided,
+          fontSize: '12px', // Adjust font size for individual options
+          padding: '8px 12px', // Adjust padding for individual options
+          color : 'black'
+      }),
+  };
+  
+  const clearfilter = () => {
+    setFilterData({
+      user: '',
+      startDate: '',
+      endDate: ''
+    })
+    setDaterange({startDate : null , endDate: null});
+  }
+
+  const searchRecords = () => {
+    const startDate = daterange.startDate;
+    const endDate = daterange.endDate;
+
+  
+    // Set the filter data state
+    setFilterData(prevData => ({
+      ...prevData,
+      startDate: startDate,
+      endDate: endDate
+    }));
+
+
+    console.log(filterData)
+  }
+  
+
 
   return (
     <>
@@ -59,15 +174,54 @@ const Dashboard = () => {
 
 <div className="p-4 w-full bg-gray-100 min-h-screen">
   <div className="flex justify-between items-center mb-4">
-    <h1 className="text-[20px] font-semibold">Welcome {activeUserData?.user_name} </h1>
-    <button className="bg-gray-800 text-white py-2 px-4 rounded-lg">Make report</button>
+    <h1 className="text-[14px] font-semibold">Welcome {activeUserData?.user_name} </h1>
+    <div className="flex gap-2">
+
+    {/* <div>
+      <p
+        className="bg-gray-800 text-white relative py-2 cursor-pointer text-[14px] px-2 rounded-md"
+        onClick={toggleFilter}
+      >
+        <i className="fa-solid fa-filter"></i>
+      </p>
+      {isOpen && (
+        <div ref={filterRef} className="filter absolute left-[84%]  bg-black w-[180px] text-white p-4 h-[200px] mt-2 rounded-md">
+          <p className="text-xs mb-1">Filter User </p>
+
+          <Select
+              options={userOptions.data}
+              onChange={handleUserChange}
+              value={userOptions.data?.find(option => option.value === filterData.user) || null}
+              placeholder="user"
+              styles={customStyles} 
+          />
+
+          <p className="text-xs mb-1 mt-2">Filter Date </p>
+          <DateRangePicker value={daterange} setValue={setDaterange} />
+
+          <div className="mt-4 flex justify-end gap-2">
+              <div className="border border-white p-1 cursor-pointer rounded-md px-2" onClick={searchRecords}>
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </div>
+              <div className="border border-white p-1 rounded-md cursor-pointer px-2" onClick={clearfilter} >
+                <i class="fa-solid fa-rectangle-xmark"></i>
+              </div>
+          </div>
+        </div>
+
+        
+      )}
+    </div> */}          
+    <button className="bg-gray-800 text-white text-[14px] py-2 px-2 rounded-lg">Make report</button>
+    </div>
   </div>
   
   <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+    
       {/* Total Credits */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
         <h2 className="text-lg font-medium">Total Credit Amount</h2>
-        <p className="text-2xl font-bold">₹ {data.total_credit}</p>
+        <p className="text-2xl font-bold">₹ {data.total_credit_amount}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -103,40 +257,57 @@ const Dashboard = () => {
           <p className="font-semibold text-sm mt-1">{cy}</p>
         </div>
       </div>
+
     </div>
   
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-    {/* Monthly Target Card */}
-    <div className="bg-white p-4 rounded-2xl shadow-lg">
-      <h2 className="text-lg font-medium">Monthly Target</h2>
-      <div className="flex items-center justify-between mt-2">
-        <p className="text-2xl font-bold">69.32%</p>
-        <p className="text-gray-500">Goal set for the current month</p>
-      </div>
-      <div className="w-full bg-gray-200 h-2 rounded-2xl mt-2">
-        <div className="bg-blue-600 h-2 rounded-lg" style={{ width: '69.32%' }}></div>
-      </div>
-      <div className="flex items-center justify-between mt-2">
-        <p className="text-gray-500">{data.total_paid}</p>
-      </div>
-      <div className="flex items-center justify-between mt-4">
-        <div>
-          <p className="text-gray-500">Total Balance</p>
-          <p className="text-lg font-bold">{data.total_balance}</p>
-        </div>
-        <div>
-          <p className="text-gray-500">Total Qty</p>
-          <p className="text-lg font-bold">{data.total_qty}</p>
-        </div>
-        <div>
-          <p className="text-gray-500">Total Paid</p>
-          <p className="text-lg font-bold">{data.total_paid}</p>
-        </div>
-      </div>
-    </div>
+  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mt-4">
     
+      {/* Total Credits */}
+       <div className="bg-white p-4 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-medium">Total Credit Amount</h2>
+        <p className="text-2xl font-bold">₹ {data.total_credit_amount}</p>
+        <div className="flex gap-2">
+          <p className="text-green-500">⬆ 17.4%</p>
+          <p className="font-semibold text-sm mt-1">{cy}</p>
+        </div>
+      </div>
+
+      {/* Total Paid */}
+      <div className="bg-white p-4 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-medium">Total Paid</h2>
+        <p className="text-2xl font-bold">₹ {data.total_paid}</p>
+        <div className="flex gap-2">
+          <p className="text-green-500">⬆ 17.4%</p>
+          <p className="font-semibold text-sm mt-1">{cy}</p>
+        </div>
+      </div>
+
+      {/* Total Balance */}
+      <div className="bg-white p-4 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-medium">Total Balance</h2>
+        <p className="text-2xl font-bold">₹ {data.total_balance}</p>
+        <div className="flex gap-2">
+          <p className="text-green-500">⬆ 17.4%</p>
+          <p className="font-semibold text-sm mt-1">{cy}</p>
+        </div>
+      </div>
+
+      {/* Total Quantity */}
+      <div className="bg-white p-4 rounded-2xl shadow-lg">
+        <h2 className="text-lg font-medium">Total Quantity</h2>
+        <p className="text-2xl font-bold">{data.total_qty}</p>
+        <div className="flex gap-2">
+          <p className="text-green-500">⬆ 17.4%</p>
+          <p className="font-semibold text-sm mt-1">{cy}</p>
+        </div>
+      </div>
+
+  </div>
+  
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+
     {/* Accont balance */}
-    <div className="bg-white p-4 rounded-2xl shadow-lg">
+  <div className="bg-white p-4 rounded-2xl shadow-lg">
       <h2 className="text-lg font-medium">Account balance</h2>
       <div className="mt-2 border-b  h-10 text-lg font-semibold">
       ₹ {data.current_bal}
@@ -153,27 +324,7 @@ const Dashboard = () => {
       </div>
 
     </div>
-  </div>
-  
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-    {/* Location Card with Map */}
-    <div className="bg-white p-4 rounded-2xl shadow-lg">
-      <h2 className="text-lg font-medium">Location</h2>
-      <div id="map" className="mt-2">
-  <iframe 
-    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3766.767181677502!2d73.01384387518075!3d19.248975846519542!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7bde5e82895ff%3A0x963d6375dc7f901c!2sDEEP%20SPORTS!5e0!3m2!1sen!2sin!4v1721840516974!5m2!1sen!2sin" 
-    width="600" 
-    height="150" 
-    style={{ border: '0' }} 
-    allowFullScreen 
-    loading="lazy" 
-    referrerPolicy="no-referrer-when-downgrade">
-  </iframe>
-      </div>
 
-
-
-    </div>
     
     {/* Most recent transactions */}
     <div className="bg-white p-4 rounded-2xl shadow-lg">
@@ -188,15 +339,16 @@ const Dashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {transactions.map(transaction => (
-            <tr key={transaction.id} className="text-center py-2 border-b">
-              <td>{transaction.transid}</td>
-              <td>{transaction.date}</td>
-              <td>{transaction.trans_type}</td>
-              <td>₹ {transaction.amount}</td>
-            </tr>
-          ))}
-        </tbody>
+  {transactions.slice(0, 5).map(transaction => (
+    <tr key={transaction.id} className="text-center py-2 border-b">
+      <td>{transaction.transid}</td>
+      <td>{transaction.date}</td>
+      <td>{transaction.trans_type}</td>
+      <td>₹ {transaction.amount}</td>
+    </tr>
+  ))}
+</tbody>
+
       </table>
     </div>
 

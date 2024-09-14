@@ -23,8 +23,6 @@ import CloseIcon from "./CloseIcon.svg";
 import InfoIcon from "./InfoIcon.svg";
 import DownArrow from "./DownArrow.svg";
 import DownWhite from "./DownWhite.svg";
-import InfoIconWhite from "./InfoIconWhite.svg";
-import TickWhite from "./TickWhite.svg";
 import PropertyIcon from "./PropertyIcon.svg";
 import EditIcon from "./EditIcon.svg";
 import DeleteIcon from "./DeleteIcon.svg";
@@ -78,9 +76,7 @@ const IMAGES = {
   DeleteIcon,
   PropertyIcon,
   EditIcon,
-  TickWhite,
   DownWhite,
-  InfoIconWhite,
   DownArrow,
   InfoIcon,
   CloseIcon,

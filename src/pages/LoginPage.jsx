@@ -73,18 +73,18 @@ const LoginPage = () => {
         //send OTP api call
         axiosInstance("/session/otp/" + whatsAppNumber, "GET")
           .then((res) => {
-            toast.success(res?.data?.messages[0]);
+            alert(res?.data?.messages[0]);
             setOtpSuccess(true);
           })
           .catch((error) => {
-            toast.error(error?.response?.data?.messages[0]);
+            alert(error?.response?.data?.messages[0]);
             console.log("error");
           });
       } catch (error) {
-        toast.error("An error occurred while sending OTP.");
+        alert("An error occurred while sending OTP.");
       }
     } else {
-      toast.error("Invalid Number");
+      alert("Invalid Number");
     }
   };
 
@@ -155,13 +155,13 @@ const handleLogin = async () => {
         navigate("/");
       })
       .catch((error) => {
-        toast.error(error?.response?.data?.messages[0]);
+        alert(error?.response?.data?.messages[0]);
       });
   } else {
     if (otpSuccess) {
-      toast.error("Enter OTP");
+      alert("Enter OTP");
     } else {
-      toast.error("Enter Number");
+      alert("Enter Number");
     }
   }
 };

@@ -37,10 +37,10 @@ const CreditForm = () => {
                 setCredits(response.data.data);
                 setTotalCredits(response.data.total_count);
             } else {
-                toast.error("Failed to fetch credits");
+                alert("Failed to fetch credits");
             }
         } catch (error) {
-            toast.error("An error occurred while fetching credits");
+            alert("An error occurred while fetching credits");
         }
     };
 
@@ -68,7 +68,7 @@ const CreditForm = () => {
         if (!data.credit_date) tempErrors.credit_date = 'This field is required.';
         if (!data.credit_title) tempErrors.credit_title = 'This field is required.';
         if (!data.credit_desc) tempErrors.credit_desc = 'This field is required.';
-        if (!data.credit_amount) tempErrors.credit_amount = 'This field is required.';
+        if (!data.credit_amount) tempErrors.credit_amosunt = 'This field is required.';
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0;
     };
@@ -80,25 +80,25 @@ const CreditForm = () => {
                 apiInstance("/Credit.php", "PATCH", { ...data, id: editId })
                     .then((responseData) => {
                         if (responseData.status === 200) {
-                            toast.success("Credit Updated");
+                            alert("Credit Updated");
                             setData(initialFormData);
                             setIsEditing(false);
                             setEditId(null);
                             fetchCredits(currentPage); // Refresh the credits list
                             setActiveTab('allCredits');
                         } else {
-                            toast.error("Error Occurred");
+                            alert("Error Occurred");
                         }
                     })
             } else {
                 apiInstance("/Credit.php", "PUT", data)
                     .then((responseData) => {
                         if (responseData.status === 200) {
-                            toast.success("Credit Added");
+                            alert("Credit Added");
                             setData(initialFormData);
                             fetchCredits(currentPage); // Refresh the credits list
                         } else {
-                            toast.error("Error Occurred");
+                            alert("Error Occurred");
                         }
                     })
             }
@@ -132,6 +132,7 @@ const CreditForm = () => {
     };
 
     const totalPages = Math.ceil(totalCredits / creditsPerPage);
+
 
 
     return (

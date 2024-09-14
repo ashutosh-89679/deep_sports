@@ -99,10 +99,10 @@ function getFinancialQuarterDates(year, quarter) {
     }}
       useRange={false}
       showShortcuts={true}
-      toggleClassName="absolute text-[#9A55FF] fill-[#9A55FF] stroke-[#9A55FF] path-[#9A55FF] rounded-r-lg  right-2 h-full "
+      toggleClassName="absolute text-[#9A55FF] fill-[#9A55FF] stroke-[#9A55FF] path-[#9A55FF] rounded-r-lg text-xs right-2 h-full "
       placeholder={"Enter Date"}
       inputClassName={
-        "border pl-1 border-[#E0E0E0] w-[99%] text-sm h-8 rounded outline-none text-[#6F6B6B]  "
+        "border pl-1 text-[9px] border-[#E0E0E0] w-[99%] text-sm h-8 rounded outline-none text-[#6F6B6B]  "
       }
       value={value}
       onChange={handleValueChange}

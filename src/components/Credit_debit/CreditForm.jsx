@@ -182,14 +182,11 @@ const CreditForm = () => {
                                                 <td className="py-2 px-4 text-center border-b">₹ {credit.credit_amount}</td>
                                                 <td className="py-2 px-4 text-center border-b">{credit.added_by}</td>
                                                 <td className="py-2 px-4 text-center cursor-pointer border-b">
-                                                  {userID === credit.user_id ? (
                                                     <i
                                                       className="fa-solid fa-pen"
                                                       onClick={() => handleEdit(credit)}
                                                     ></i>
-                                                  ) : (
-                                                    <span>No Access</span> 
-                                                  )}
+                                                  
                                                 </td>
                                             </tr>
                                         ))}

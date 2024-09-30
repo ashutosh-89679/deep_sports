@@ -319,16 +319,12 @@ const OrderForm = () => {
         {
             name: 'Action',
             cell: row => (
-                row.added_by === userID ? (
                     <button
                         onClick={() => handleEdit(row)}
                         className="text-blue-500 hover:text-blue-700"
                     >
                         Edit
                     </button>
-                ) : (
-                    <span>No Access</span>
-                )
             ),
         },
     ];

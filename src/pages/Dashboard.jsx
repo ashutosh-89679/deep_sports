@@ -158,11 +158,10 @@ const Dashboard = () => {
     }));
 
 
-    console.log(filterData)
   }
   
 
-
+console.log(data);
   return (
     <>
      <main className="flex  h-screen select-none">
@@ -220,8 +219,8 @@ const Dashboard = () => {
     
       {/* Total Credits */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Credit Amount</h2>
-        <p className="text-2xl font-bold">₹ {data.total_credit_amount}</p>
+        <h2 className="text-lg font-medium">Total Credit Amount (More)</h2>
+        <p className="text-2xl font-bold">₹ {Number(data.total_credit_amount) || 0}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -230,8 +229,8 @@ const Dashboard = () => {
 
       {/* Total Paid */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Paid</h2>
-        <p className="text-2xl font-bold">₹ {data.total_paid}</p>
+        <h2 className="text-lg font-medium">Total Paid (More)</h2>
+        <p className="text-2xl font-bold">₹ {Number(data.total_paid) || 0}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -240,8 +239,8 @@ const Dashboard = () => {
 
       {/* Total Balance */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Balance</h2>
-        <p className="text-2xl font-bold">₹ {data.total_balance}</p>
+        <h2 className="text-lg font-medium">Total Balance (More)</h2>
+        <p className="text-2xl font-bold">₹ {Number(data.total_balance) || 0}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -250,8 +249,8 @@ const Dashboard = () => {
 
       {/* Total Quantity */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Quantity</h2>
-        <p className="text-2xl font-bold">{data.total_qty}</p>
+        <h2 className="text-lg font-medium">Total Quantity (More)</h2>
+        <p className="text-2xl font-bold">{Number(data.total_qty) ||0 }</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -264,8 +263,8 @@ const Dashboard = () => {
     
       {/* Total Credits */}
        <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Credit Amount</h2>
-        <p className="text-2xl font-bold">₹ {data.total_credit_amount}</p>
+        <h2 className="text-lg font-medium">Total Credit Amount (Mahatre)</h2>
+        <p className="text-2xl font-bold">₹ {Number(data.total_credit_amount) || 0}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -274,8 +273,8 @@ const Dashboard = () => {
 
       {/* Total Paid */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Paid</h2>
-        <p className="text-2xl font-bold">₹ {data.total_paid}</p>
+        <h2 className="text-lg font-medium">Total Paid (Mahatre)</h2>
+        <p className="text-2xl font-bold">₹ {Number(data.total_paid) || 0}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -284,8 +283,8 @@ const Dashboard = () => {
 
       {/* Total Balance */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Balance</h2>
-        <p className="text-2xl font-bold">₹ {data.total_balance}</p>
+        <h2 className="text-lg font-medium">Total Balance (Mahatre)</h2>
+        <p className="text-2xl font-bold">₹ {Number(data.total_balance) || 0}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -294,8 +293,8 @@ const Dashboard = () => {
 
       {/* Total Quantity */}
       <div className="bg-white p-4 rounded-2xl shadow-lg">
-        <h2 className="text-lg font-medium">Total Quantity</h2>
-        <p className="text-2xl font-bold">{data.total_qty}</p>
+        <h2 className="text-lg font-medium">Total Quantity (Mahatre)</h2>
+        <p className="text-2xl font-bold">{Number(data.total_qty) || 0}</p>
         <div className="flex gap-2">
           <p className="text-green-500">⬆ 17.4%</p>
           <p className="font-semibold text-sm mt-1">{cy}</p>
@@ -310,16 +309,16 @@ const Dashboard = () => {
   <div className="bg-white p-4 rounded-2xl shadow-lg">
       <h2 className="text-lg font-medium">Account balance</h2>
       <div className="mt-2 border-b  h-10 text-lg font-semibold">
-      ₹ {data.current_bal}
+      ₹ {Number(data.current_bal) || 0}
       </div>
       <div className="p-6 flex gap-2 justify-center w-[100% ]">
           <div className=" h-[100%] justify-center w-[50%] border-r border-black">
             <p className="font-semibold">Total Credit</p>
-            <p>₹ {data.total_credit_amount}</p>
+            <p>₹ {Number(data.total_credit_amount) || 0}</p>
           </div>
           <div className=" h-[100%] justify-center w-[50%] ">
           <p className="font-semibold">Total Debit</p>
-          <p>₹ {data.total_debit_amount}</p>
+          <p>₹ {Number(data.total_debit_amount) || 0}</p>
           </div>
       </div>
 
